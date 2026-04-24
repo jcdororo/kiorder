@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/wnwlc/.claude/**)",
+      "mcp__TalkToFigma__get_document_info",
+      "mcp__TalkToFigma__create_frame",
+      "mcp__TalkToFigma__create_text",
+      "mcp__TalkToFigma__set_corner_radius",
+      "mcp__TalkToFigma__move_node",
+      "Bash(curl -s -X POST http://localhost:3001/auth/register -H \"Content-Type: application/json\" -d '{\"email\":\"owner@test.com\",\"password\":\"test1234\"}')"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\wnwlc\\.claude"
+    ]
+  }
+}
