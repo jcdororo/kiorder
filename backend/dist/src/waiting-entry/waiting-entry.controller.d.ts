@@ -31,6 +31,7 @@ export declare class WaitingEntryController {
         partySize: number;
     }[]>;
     findOne(id: string): Promise<{
+        ahead: number;
         number: number;
         id: string;
         createdAt: Date;

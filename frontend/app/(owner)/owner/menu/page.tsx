@@ -3,19 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import {
-  ClipboardList,
-  UtensilsCrossed,
-  Settings,
-  Plus,
-  Pencil,
-  Trash2,
-} from "lucide-react";
+import { Plus, Pencil, Trash2, UtensilsCrossed, PhoneCall } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -154,11 +146,16 @@ export default function Page() {
       credentials: "include",
       body: JSON.stringify(data),
     });
-    if (!res.ok) { toast.error("저장에 실패했습니다."); return; }
+    if (!res.ok) {
+      toast.error("저장에 실패했습니다.");
+      return;
+    }
 
     const saved = await res.json();
     if (editingItem) {
-      setMenuItems(menuItems.map((item) => (item.id === editingItem.id ? saved : item)));
+      setMenuItems(
+        menuItems.map((item) => (item.id === editingItem.id ? saved : item)),
+      );
     } else {
       setMenuItems([...menuItems, saved]);
     }
@@ -169,118 +166,179 @@ export default function Page() {
 
   const openAddDialog = () => {
     setEditingItem(null);
-    form.reset({ name: "", category: "메인", price: 0, description: "", image: "" });
+    form.reset({
+      name: "",
+      category: "메인",
+      price: 0,
+      description: "",
+      image: "",
+    });
     setIsAddDialogOpen(true);
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] flex">
+    <div className="min-h-screen bg-gray-950 text-white flex">
       {/* Sidebar */}
-      <div className="w-60 bg-white border-r border-[#E5E7EB] p-4">
+      <div className="w-60 bg-gray-900 border-r border-white/10 p-4 flex flex-col">
         <div className="mb-8">
-          <h1 className="text-xl text-[#111827] mb-1">맛있는 식당</h1>
-          <p className="text-sm text-[#6B7280]">관리자</p>
+          <h1 className="text-xl text-white mb-1">맛있는 식당</h1>
+          <p className="text-sm text-gray-500">관리자</p>
         </div>
 
-        <nav className="space-y-2">
+        <nav className="space-y-2 flex-1">
           <Button
             variant="ghost"
-            className="w-full justify-start"
-            onClick={() => router.push("/admin/waiting")}
+            className="w-full justify-start text-gray-400 hover:text-white hover:bg-white/10"
+            onClick={() => router.push("/owner/waiting")}
           >
-            <ClipboardList className="w-4 h-4 mr-2" />
+            <PhoneCall className="w-4 h-4 mr-2" />
             웨이팅 관리
           </Button>
           <Button
             variant="ghost"
-            className="w-full justify-start bg-[#F97316]/10 text-[#F97316] hover:bg-[#F97316]/20"
+            className="w-full justify-start bg-orange-500/10 text-orange-400 hover:bg-orange-500/20"
           >
             <UtensilsCrossed className="w-4 h-4 mr-2" />
             메뉴 관리
           </Button>
         </nav>
 
-        <div className="absolute bottom-4 left-4 right-4">
-          <Link href="/">
-            <Button
-              variant="ghost"
-              className="w-full justify-start text-[#6B7280]"
-            >
-              <Settings className="w-4 h-4 mr-2" />
-              홈으로
-            </Button>
-          </Link>
-        </div>
+        <Link href="/">
+          <Button
+            variant="ghost"
+            className="w-full justify-start text-gray-500 hover:text-white hover:bg-white/10"
+          >
+            홈으로
+          </Button>
+        </Link>
       </div>
 
       {/* Main Content */}
       <div className="flex-1 p-8 overflow-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl text-[#111827]">메뉴 관리</h1>
+          <h1 className="text-2xl text-white">메뉴 관리</h1>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button
-                className="bg-[#F97316] hover:bg-[#F97316]/90 text-white"
+                className="bg-orange-500 hover:bg-orange-600 text-white"
                 onClick={openAddDialog}
               >
                 <Plus className="w-4 h-4 mr-2" />
                 메뉴 추가
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-md bg-gray-900 border-gray-700 text-white">
               <DialogHeader>
-                <DialogTitle>
+                <DialogTitle className="text-white">
                   {editingItem ? "메뉴 수정" : "메뉴 추가"}
                 </DialogTitle>
-                <DialogDescription>메뉴 정보를 입력해주세요</DialogDescription>
+                <DialogDescription className="text-gray-400">
+                  메뉴 정보를 입력해주세요
+                </DialogDescription>
               </DialogHeader>
 
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                  <FormField control={form.control} name="name" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>메뉴명</FormLabel>
-                      <FormControl><Input placeholder="메뉴 이름" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
+                <form
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className="space-y-4 py-4"
+                >
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-gray-300">메뉴명</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="메뉴 이름"
+                            className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                  <FormField control={form.control} name="category" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>카테고리</FormLabel>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                        <SelectContent>
-                          <SelectItem value="메인">메인</SelectItem>
-                          <SelectItem value="사이드">사이드</SelectItem>
-                          <SelectItem value="음료">음료</SelectItem>
-                          <SelectItem value="주류">주류</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
+                  <FormField
+                    control={form.control}
+                    name="category"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-gray-300">카테고리</FormLabel>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent className="bg-gray-800 border-gray-700 text-white">
+                            <SelectItem value="메인">메인</SelectItem>
+                            <SelectItem value="사이드">사이드</SelectItem>
+                            <SelectItem value="음료">음료</SelectItem>
+                            <SelectItem value="주류">주류</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                  <FormField control={form.control} name="price" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>가격</FormLabel>
-                      <FormControl><Input type="number" placeholder="0" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
+                  <FormField
+                    control={form.control}
+                    name="price"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-gray-300">가격</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="0"
+                            className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                  <FormField control={form.control} name="description" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>설명</FormLabel>
-                      <FormControl><Textarea placeholder="메뉴 설명" rows={3} {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-gray-300">설명</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="메뉴 설명"
+                            rows={3}
+                            className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
                   <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>취소</Button>
-                    <Button type="submit" className="bg-[#F97316] hover:bg-[#F97316]/90 text-white">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white"
+                      onClick={() => setIsAddDialogOpen(false)}
+                    >
+                      취소
+                    </Button>
+                    <Button
+                      type="submit"
+                      className="bg-orange-500 hover:bg-orange-600 text-white"
+                    >
                       {editingItem ? "수정" : "저장"}
                     </Button>
                   </DialogFooter>
@@ -295,13 +353,13 @@ export default function Page() {
           {categories.map((category) => (
             <Button
               key={category}
-              variant={selectedCategory === category ? "default" : "outline"}
               size="sm"
+              variant={selectedCategory === category ? "default" : "outline"}
               onClick={() => setSelectedCategory(category)}
               className={
                 selectedCategory === category
-                  ? "bg-[#F97316] hover:bg-[#F97316]/90"
-                  : "border-[#E5E7EB]"
+                  ? "bg-orange-500 hover:bg-orange-600 text-white border-none"
+                  : "border-white/20 text-gray-400 hover:text-white hover:bg-white/10 hover:border-white/40"
               }
             >
               {category}
@@ -310,75 +368,73 @@ export default function Page() {
         </div>
 
         {/* Menu Table */}
-        <Card className="border-[#E5E7EB]">
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>이미지</TableHead>
-                  <TableHead>메뉴명</TableHead>
-                  <TableHead>카테고리</TableHead>
-                  <TableHead>가격</TableHead>
-                  <TableHead>상태</TableHead>
-                  <TableHead className="text-right">액션</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredItems.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell>
-                      <ImageWithFallback
-                        src={item.image}
-                        alt={item.name}
-                        className="w-12 h-12 object-cover rounded"
+        <div className="bg-gray-900 rounded-xl border border-white/10 overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-white/10 hover:bg-transparent">
+                <TableHead className="text-gray-500">이미지</TableHead>
+                <TableHead className="text-gray-500">메뉴명</TableHead>
+                <TableHead className="text-gray-500">카테고리</TableHead>
+                <TableHead className="text-gray-500">가격</TableHead>
+                <TableHead className="text-gray-500">상태</TableHead>
+                <TableHead className="text-gray-500 text-right">액션</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredItems.map((item) => (
+                <TableRow key={item.id} className="border-white/5 hover:bg-white/5">
+                  <TableCell>
+                    <ImageWithFallback
+                      src={item.image}
+                      alt={item.name}
+                      className="w-12 h-12 object-cover rounded-lg"
+                    />
+                  </TableCell>
+                  <TableCell className="text-white">{item.name}</TableCell>
+                  <TableCell>
+                    <Badge className="bg-white/10 text-gray-300 border-white/20 hover:bg-white/20">
+                      {item.category}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-gray-400">
+                    {item.price.toLocaleString()}원
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={item.available}
+                        onCheckedChange={() => toggleAvailability(item.id)}
                       />
-                    </TableCell>
-                    <TableCell className="text-[#111827]">
-                      {item.name}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="border-[#E5E7EB]">
-                        {item.category}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-[#6B7280]">
-                      {item.price.toLocaleString()}원
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          checked={item.available}
-                          onCheckedChange={() => toggleAvailability(item.id)}
-                        />
-                        <span className="text-sm text-[#6B7280]">
-                          {item.available ? "판매중" : "품절"}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => handleEdit(item)}
-                        >
-                          <Pencil className="w-4 h-4 text-[#6B7280]" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => handleDelete(item.id)}
-                        >
-                          <Trash2 className="w-4 h-4 text-[#EF4444]" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                      <span className={`text-sm ${item.available ? "text-green-400" : "text-gray-500"}`}>
+                        {item.available ? "판매중" : "품절"}
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="text-gray-400 hover:text-white hover:bg-white/10"
+                        onClick={() => handleEdit(item)}
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                        onClick={() => handleDelete(item.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   );

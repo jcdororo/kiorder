@@ -33,7 +33,16 @@ export class WaitingEntryService {
   }
 
   async findOne(id: string) {
-    return this.prisma.waitingEntry.findUnique({ where: { id } });
+    const entry = await this.prisma.waitingEntry.findUnique({ where: { id } });
+    if (!entry) return null;
+    const ahead = await this.prisma.waitingEntry.count({
+      where: {
+        storeId: entry.storeId,
+        status: { in: ['대기중', '호출중'] },
+        number: { lt: entry.number },
+      },
+    });
+    return { ...entry, ahead };
   }
 
   async updateStatus(id: string, dto: UpdateWaitingStatusDto) {
