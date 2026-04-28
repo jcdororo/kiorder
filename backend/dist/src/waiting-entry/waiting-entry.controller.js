@@ -18,6 +18,7 @@ const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
 const waiting_entry_service_1 = require("./waiting-entry.service");
 const create_waiting_dto_1 = require("./dto/create-waiting.dto");
 const update_waiting_status_dto_1 = require("./dto/update-waiting-status.dto");
+const update_guest_response_dto_1 = require("./dto/update-guest-response.dto");
 let WaitingEntryController = class WaitingEntryController {
     constructor(waitingEntryService) {
         this.waitingEntryService = waitingEntryService;
@@ -33,6 +34,9 @@ let WaitingEntryController = class WaitingEntryController {
     }
     updateStatus(id, dto) {
         return this.waitingEntryService.updateStatus(id, dto);
+    }
+    updateGuestResponse(id, dto) {
+        return this.waitingEntryService.updateGuestResponse(id, dto);
     }
 };
 exports.WaitingEntryController = WaitingEntryController;
@@ -69,6 +73,14 @@ __decorate([
     __metadata("design:paramtypes", [String, update_waiting_status_dto_1.UpdateWaitingStatusDto]),
     __metadata("design:returntype", void 0)
 ], WaitingEntryController.prototype, "updateStatus", null);
+__decorate([
+    (0, common_1.Patch)(':id/guest-response'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, update_guest_response_dto_1.UpdateGuestResponseDto]),
+    __metadata("design:returntype", void 0)
+], WaitingEntryController.prototype, "updateGuestResponse", null);
 exports.WaitingEntryController = WaitingEntryController = __decorate([
     (0, common_1.Controller)('waiting'),
     __metadata("design:paramtypes", [waiting_entry_service_1.WaitingEntryService])

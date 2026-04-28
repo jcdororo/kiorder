@@ -11,6 +11,7 @@ type WaitingEntry = {
   partySize: number;
   phone: string;
   ahead: number;
+  guestResponse: string | null;
 };
 
 const STATUS_LABEL: Record<WaitingEntry["status"], string> = {
@@ -32,6 +33,7 @@ export default function Page() {
   const [entry, setEntry] = useState<WaitingEntry | null>(null);
   const [countdown, setCountdown] = useState(15);
   const [isCooldown, setIsCooldown] = useState(false);
+  const [responded, setResponded] = useState(false);
 
   const fetchStatus = async () => {
     try {
@@ -60,6 +62,30 @@ export default function Page() {
     }, 1000);
     return () => clearInterval(tick);
   }, []);
+
+  const handleGuestResponse = async (response: "가고있어요" | "10분 늦어요") => {
+    await fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/waiting/${waitingId}/guest-response`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ response }),
+      },
+    );
+    setResponded(true);
+  };
+
+  const handleGuestCancel = async () => {
+    await fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/waiting/${waitingId}/status`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "취소" }),
+      },
+    );
+    fetchRef.current();
+  };
 
   const handleRefresh = () => {
     if (isCooldown) return;
@@ -133,6 +159,43 @@ export default function Page() {
             <span>{entry.partySize}인</span>
           </div>
         </div>
+
+        {(entry.status === "호출중" || entry.ahead <= 3) && (
+          <div className="w-full space-y-3">
+            {responded || entry.guestResponse ? (
+              <div className="bg-green-500/10 border border-green-500/30 rounded-2xl p-4 text-center">
+                <p className="text-green-400 font-semibold">
+                  {entry.guestResponse ?? "응답이 전송되었습니다"}
+                </p>
+                <p className="text-gray-500 text-sm mt-1">사장님께 전달됐어요</p>
+              </div>
+            ) : (
+              <>
+                <p className="text-center text-gray-400 text-sm">입장 여부를 알려주세요</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleGuestResponse("가고있어요")}
+                    className="flex-1 py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white font-semibold transition-colors cursor-pointer"
+                  >
+                    가고있어요
+                  </button>
+                  <button
+                    onClick={() => handleGuestResponse("10분 늦어요")}
+                    className="flex-1 py-3 rounded-xl bg-yellow-600 hover:bg-yellow-700 text-white font-semibold transition-colors cursor-pointer"
+                  >
+                    10분 늦어요
+                  </button>
+                </div>
+                <button
+                  onClick={handleGuestCancel}
+                  className="w-full py-3 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-red-400 font-semibold transition-colors border border-white/10 cursor-pointer"
+                >
+                  취소할게요
+                </button>
+              </>
+            )}
+          </div>
+        )}
 
         <div className="flex items-center gap-1.5 text-gray-600 text-xs">
           <Clock className="w-3 h-3" />

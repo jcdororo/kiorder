@@ -60,6 +60,12 @@ let WaitingEntryService = class WaitingEntryService {
             data: { status: dto.status },
         });
     }
+    async updateGuestResponse(id, dto) {
+        return this.prisma.waitingEntry.update({
+            where: { id },
+            data: { guestResponse: dto.response },
+        });
+    }
 };
 exports.WaitingEntryService = WaitingEntryService;
 exports.WaitingEntryService = WaitingEntryService = __decorate([

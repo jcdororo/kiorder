@@ -41,12 +41,14 @@ export default function Page() {
                 phone: string;
                 createdAt: string;
                 status: WaitingCustomer["status"];
+                guestResponse?: string | null;
               }) => ({
                 id: e.id,
                 number: e.number,
                 phone: e.phone,
                 registeredAt: e.createdAt,
                 status: e.status,
+                guestResponse: e.guestResponse,
                 waitingTime: `${Math.floor((Date.now() - new Date(e.createdAt).getTime()) / 60000)}분`,
               }),
             ),
@@ -186,6 +188,7 @@ export default function Page() {
           <div className="px-6 py-4 border-b border-white/10">
             <h2 className="text-lg text-white">대기 목록</h2>
           </div>
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="border-white/10 hover:bg-transparent">
@@ -195,6 +198,7 @@ export default function Page() {
                 <TableHead className="text-gray-500">등록 시각</TableHead>
                 <TableHead className="text-gray-500">대기 시간</TableHead>
                 <TableHead className="text-gray-500">상태</TableHead>
+                <TableHead className="text-gray-500">손님 응답</TableHead>
                 <TableHead className="text-gray-500 text-right">액션</TableHead>
               </TableRow>
             </TableHeader>
@@ -256,6 +260,21 @@ export default function Page() {
                         {customer.status}
                       </Badge>
                     </TableCell>
+                    <TableCell>
+                      {customer.guestResponse ? (
+                        <Badge
+                          className={
+                            customer.guestResponse === "가고있어요"
+                              ? "bg-green-500/20 text-green-300 border-green-500/30"
+                              : "bg-yellow-500/20 text-yellow-300 border-yellow-500/30"
+                          }
+                        >
+                          {customer.guestResponse}
+                        </Badge>
+                      ) : (
+                        <span className="text-gray-600 text-sm">—</span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-right">
                       {!done && (
                         <div className="flex items-center justify-end gap-2">
@@ -306,6 +325,7 @@ export default function Page() {
               })}
             </TableBody>
           </Table>
+          </div>
         </div>
       </div>
     </div>

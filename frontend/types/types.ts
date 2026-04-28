@@ -51,6 +51,7 @@ export interface WaitingCustomer {
   phone: string;
   registeredAt: string;
   status: "대기중" | "호출중" | "입장완료" | "취소";
+  guestResponse?: string | null;
 }
 
 export interface AdminMenuItem {

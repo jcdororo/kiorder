@@ -84,12 +84,13 @@ model User {
   }
 
   model WaitingEntry {
-    id           String   @id @default(uuid())
-    storeId      String
-    number       Int
-    phone        String
-    partySize    Int
-    status       String   @default("대기중")
-    createdAt    DateTime @default(now())
-    store        Store    @relation(fields: [storeId], references: [id])
+    id            String   @id @default(uuid())
+    storeId       String
+    number        Int
+    phone         String
+    partySize     Int
+    status        String   @default("대기중")
+    guestResponse String?
+    createdAt     DateTime @default(now())
+    store         Store    @relation(fields: [storeId], references: [id])
   }
