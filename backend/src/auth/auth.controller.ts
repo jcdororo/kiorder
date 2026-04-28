@@ -16,10 +16,11 @@ export class AuthController {
   async login(@Body() dto: AuthDto, @Res({ passthrough: true }) res: Response) {
     const data = await this.authService.login(dto.email, dto.password);
 
+    const isProd = process.env.NODE_ENV === 'production';
     res.cookie('access_token', data.access_token, {
       httpOnly: true,
-      secure: false, // 개발환경 HTTP라서 false, 배포 시 true
-      sameSite: 'lax',
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
       maxAge: 1000 * 60 * 60 * 24 * 365,
       path: '/',
     });
@@ -29,7 +30,12 @@ export class AuthController {
 
   @Post('logout')
   logout(@Res({ passthrough: true }) res: Response) {
-    res.clearCookie('access_token', { path: '/' });
+    const isProd = process.env.NODE_ENV === 'production';
+    res.clearCookie('access_token', {
+      path: '/',
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
+    });
     return { message: 'logged out' };
   }
 }
