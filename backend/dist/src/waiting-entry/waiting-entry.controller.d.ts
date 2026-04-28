@@ -1,6 +1,7 @@
 import { WaitingEntryService } from './waiting-entry.service';
 import { CreateWaitingDto } from './dto/create-waiting.dto';
 import { UpdateWaitingStatusDto } from './dto/update-waiting-status.dto';
+import { UpdateGuestResponseDto } from './dto/update-guest-response.dto';
 export declare class WaitingEntryController {
     private readonly waitingEntryService;
     constructor(waitingEntryService: WaitingEntryService);
@@ -16,6 +17,7 @@ export declare class WaitingEntryController {
         status: string;
         phone: string;
         partySize: number;
+        guestResponse: string | null;
     }>;
     findAll(req: {
         user: {
@@ -29,6 +31,7 @@ export declare class WaitingEntryController {
         status: string;
         phone: string;
         partySize: number;
+        guestResponse: string | null;
     }[]>;
     findOne(id: string): Promise<{
         ahead: number;
@@ -39,6 +42,7 @@ export declare class WaitingEntryController {
         status: string;
         phone: string;
         partySize: number;
+        guestResponse: string | null;
     } | null>;
     updateStatus(id: string, dto: UpdateWaitingStatusDto): Promise<{
         number: number;
@@ -48,5 +52,16 @@ export declare class WaitingEntryController {
         status: string;
         phone: string;
         partySize: number;
+        guestResponse: string | null;
+    }>;
+    updateGuestResponse(id: string, dto: UpdateGuestResponseDto): Promise<{
+        number: number;
+        id: string;
+        createdAt: Date;
+        storeId: string;
+        status: string;
+        phone: string;
+        partySize: number;
+        guestResponse: string | null;
     }>;
 }

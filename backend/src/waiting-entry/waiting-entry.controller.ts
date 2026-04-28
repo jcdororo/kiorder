@@ -12,6 +12,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { WaitingEntryService } from './waiting-entry.service';
 import { CreateWaitingDto } from './dto/create-waiting.dto';
 import { UpdateWaitingStatusDto } from './dto/update-waiting-status.dto';
+import { UpdateGuestResponseDto } from './dto/update-guest-response.dto';
 
 @Controller('waiting')
 export class WaitingEntryController {
@@ -41,5 +42,13 @@ export class WaitingEntryController {
   @Patch(':id/status')
   updateStatus(@Param('id') id: string, @Body() dto: UpdateWaitingStatusDto) {
     return this.waitingEntryService.updateStatus(id, dto);
+  }
+
+  @Patch(':id/guest-response')
+  updateGuestResponse(
+    @Param('id') id: string,
+    @Body() dto: UpdateGuestResponseDto,
+  ) {
+    return this.waitingEntryService.updateGuestResponse(id, dto);
   }
 }

@@ -49,12 +49,35 @@
 - Table 모듈 완료, 테이블오더 `[tableId]/menu` 라우트 완료
 - WaitingEntry 백엔드 모듈 완료 (4개 엔드포인트)
 - `/kiosk/waiting` + `/kiosk/complete` 프론트 연동 완료 (QR코드 포함)
-
-- `/waiting/status/[waitingId]` 손님용 대기현황 페이지 완료 (15초 자동갱신, QR 연동)
+- `/waiting/[waitingId]` 손님용 대기현황 페이지 완료 (15초 자동갱신, QR 연동, 앞 팀 수 표시)
+  - 라우트 정리: `/waiting/status/[waitingId]` → `/waiting/[waitingId]` (status 폴더 제거)
 - `/owner/waiting` 연동 완료 (다크 UI, Realtime, 정렬+취소선 처리)
+- `/kiosk/complete` 태블릿 가로 레이아웃 완료
+- `/owner/menu` 다크 UI 완료
+- `waiting-entry.service.ts` `findOne` — `ahead` 집계 추가
+- README.md 작성 완료, `docs/readme` 브랜치 PR 생성
+- `kiosk/display` 페이지 제거 (손님 대기현황 QR 페이지로 대체)
+- `proxy.ts` 개선
+  - `/table-order`, `/kitchen`, `/kiosk`, `/pos` STORE_OWNER 전용으로 보호 추가
+  - `/login` 접근 시 role 기반 redirect (SYSTEM_ADMIN → /system-admin/stores)
+  - `SECRET` 모듈 상단 상수화, JWT_SECRET 누락 시 startup 에러 처리
 
-### 다음 할 일
-- 미정 (전체 핵심 기능 연동 완료)
+### 다음 할 일 (우선순위 순)
+
+#### P1 — 포트폴리오 완성
+- 배포 (Vercel + Railway)
+- 웨이팅 손님 응답 버튼 — `/waiting/[waitingId]`에서 {가고있어요, 10분 늦어요, 취소할게요} 추가, 사장님 웨이팅 관리에서 손님 응답 실시간 확인
+- kitchen/orders 자유 상태변경 + 카드 이동 애니메이션
+- 나머지 페이지 다크 UI (kitchen, dashboard, pos)
+
+#### P2 — 완성도 다듬기
+- table-order 주문내역 버튼 (장바구니 옆)
+- fetch 공통 클라이언트 (`lib/api.ts`)
+- 컴포넌트 분리 (클린코드) — lib/api.ts 이후 진행
+- 로딩 스켈레톤 + 에러 토스트 통일
+
+#### P3 — 선택
+- 대시보드 통계 연동, 주문 알림음, POS 결제 연동, 테이블 설정 저장, 웨이팅 마감 ON/OFF
 
 ## 기술 스택 참고
 

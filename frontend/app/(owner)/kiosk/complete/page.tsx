@@ -1,6 +1,7 @@
-import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
+import Link from "next/link";
 import QrCode from "@/components/QrCode";
+import KioskCompleteCountdown from "@/components/KioskCompleteCountdown";
 
 export default async function Page({
   searchParams,
@@ -13,7 +14,7 @@ export default async function Page({
     { cache: "no-store" },
   );
   const entry = await res.json();
-  const statusUrl = `${process.env.NEXT_PUBLIC_FRONTEND_URL}/waiting/status/${id}`;
+  const statusUrl = `${process.env.NEXT_PUBLIC_FRONTEND_URL}/waiting/${id}`;
 
   return (
     <div className="min-h-screen bg-linear-to-b from-gray-950 to-gray-900 flex flex-col p-8">
@@ -42,12 +43,7 @@ export default async function Page({
         </div>
       </div>
 
-      <Link
-        href="/kiosk/waiting"
-        className="w-full h-14 mt-8 rounded-xl border border-white/20 text-gray-300 hover:text-white hover:border-white/40 transition-colors flex items-center justify-center no-underline"
-      >
-        처음으로 돌아가기
-      </Link>
+      <KioskCompleteCountdown />
     </div>
   );
 }

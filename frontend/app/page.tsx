@@ -18,7 +18,6 @@ export default async function Page() {
       color: "bg-blue-500",
       links: [
         { name: "웨이팅 등록", path: "/kiosk/waiting" },
-        { name: "대기 현황", path: "/kiosk/display" },
       ],
     },
     {

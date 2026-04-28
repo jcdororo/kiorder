@@ -7,35 +7,41 @@ interface JwtPayload {
   role: "SYSTEM_ADMIN" | "STORE_OWNER";
 }
 
+const jwtSecret = process.env.JWT_SECRET;
+if (!jwtSecret) throw new Error("JWT_SECRET is not defined");
+const SECRET = new TextEncoder().encode(jwtSecret);
+
+const STORE_OWNER_PATHS = ["/owner", "/table-order", "/kitchen", "/kiosk", "/pos"];
+
 export async function proxy(request: NextRequest) {
   const token = request.cookies.get("access_token")?.value;
   const { pathname } = request.nextUrl;
 
-  // 로그인 페이지는 통과
   if (pathname.startsWith("/login")) {
-    if (token)
-      return NextResponse.redirect(new URL("/owner/dashboard", request.url));
+    if (token) {
+      try {
+        const { payload } = await jwtVerify<JwtPayload>(token, SECRET);
+        const dest = payload.role === "SYSTEM_ADMIN" ? "/system-admin/stores" : "/owner/dashboard";
+        return NextResponse.redirect(new URL(dest, request.url));
+      } catch {
+        return NextResponse.next();
+      }
+    }
     return NextResponse.next();
   }
 
-  // 토큰 없으면 로그인으로
   if (!token) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
   try {
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
-    const { payload } = await jwtVerify<JwtPayload>(token, secret);
+    const { payload } = await jwtVerify<JwtPayload>(token, SECRET);
 
-    // role 기반 접근 제어
-    if (
-      pathname.startsWith("/system-admin") &&
-      payload.role !== "SYSTEM_ADMIN"
-    ) {
+    if (pathname.startsWith("/system-admin") && payload.role !== "SYSTEM_ADMIN") {
       return NextResponse.redirect(new URL("/unauthorized", request.url));
     }
-    if (pathname.startsWith("/owner") && payload.role !== "STORE_OWNER") {
-      return NextResponse.redirect(new URL("unauthorized", request.url));
+    if (STORE_OWNER_PATHS.some((p) => pathname.startsWith(p)) && payload.role !== "STORE_OWNER") {
+      return NextResponse.redirect(new URL("/unauthorized", request.url));
     }
   } catch {
     return NextResponse.redirect(new URL("/login", request.url));
@@ -45,5 +51,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/owner/:path*", "/system-admin/:path*", "/login"],
+  matcher: ["/owner/:path*", "/system-admin/:path*", "/table-order/:path*", "/kitchen/:path*", "/kiosk/:path*", "/pos/:path*", "/login"],
 };

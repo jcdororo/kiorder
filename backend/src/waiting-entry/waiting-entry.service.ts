@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateWaitingDto } from './dto/create-waiting.dto';
 import { UpdateWaitingStatusDto } from './dto/update-waiting-status.dto';
+import { UpdateGuestResponseDto } from './dto/update-guest-response.dto';
 
 @Injectable()
 export class WaitingEntryService {
@@ -49,6 +50,13 @@ export class WaitingEntryService {
     return this.prisma.waitingEntry.update({
       where: { id },
       data: { status: dto.status },
+    });
+  }
+
+  async updateGuestResponse(id: string, dto: UpdateGuestResponseDto) {
+    return this.prisma.waitingEntry.update({
+      where: { id },
+      data: { guestResponse: dto.response },
     });
   }
 }
