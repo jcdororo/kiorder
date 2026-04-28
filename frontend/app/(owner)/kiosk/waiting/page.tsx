@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Users, Phone, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { apiFetch } from "@/lib/api";
 
 export default function Page() {
   const router = useRouter();
@@ -29,15 +30,11 @@ export default function Page() {
     }
     setIsSubmitting(true);
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/waiting`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ phone: phoneNumber, partySize }),
-        },
-      );
+      const res = await apiFetch("/waiting", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: phoneNumber, partySize }),
+      });
       if (!res.ok) throw new Error();
       const data = await res.json();
       router.push(`/kiosk/complete?id=${data.id}`);

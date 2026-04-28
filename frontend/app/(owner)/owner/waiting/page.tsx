@@ -16,6 +16,7 @@ import {
 import { useRouter } from "next/navigation";
 import { WaitingCustomer } from "@/types/types";
 import { supabase } from "@/lib/supabase";
+import { apiFetch } from "@/lib/api";
 
 type WaitingRow = WaitingCustomer & { waitingTime: string };
 
@@ -28,9 +29,7 @@ export default function Page() {
 
   useEffect(() => {
     const fetchWaiting = () =>
-      fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/waiting`, {
-        credentials: "include",
-      })
+      apiFetch("/waiting")
         .then((r) => r.json())
         .then((data) =>
           setCustomers(
@@ -74,10 +73,9 @@ export default function Page() {
   }, []);
 
   const updateStatus = async (id: string, status: string) => {
-    await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/waiting/${id}/status`, {
+    await apiFetch(`/waiting/${id}/status`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      credentials: "include",
       body: JSON.stringify({ status }),
     });
   };

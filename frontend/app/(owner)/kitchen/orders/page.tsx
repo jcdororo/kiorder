@@ -8,18 +8,15 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Clock } from "lucide-react";
 import { BackendOrder, KitchenOrder } from "@/types/types";
 import { supabase } from "@/lib/supabase";
+import { apiFetch } from "@/lib/api";
 
 export default function Page() {
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const [orders, setOrders] = useState<KitchenOrder[]>([]);
 
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
-
   useEffect(() => {
     const fetchOrders = async () => {
-      const res = await fetch(`${BACKEND_URL}/orders`, {
-        credentials: "include",
-      });
+      const res = await apiFetch("/orders");
       if (!res.ok) return;
       const data = await res.json();
       setOrders(
@@ -84,10 +81,9 @@ export default function Page() {
     orderId: string,
     newStatus: KitchenOrder["status"],
   ) => {
-    await fetch(`${BACKEND_URL}/orders/${orderId}/status`, {
+    await apiFetch(`/orders/${orderId}/status`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      credentials: "include",
       body: JSON.stringify({ status: newStatus }),
     });
   };

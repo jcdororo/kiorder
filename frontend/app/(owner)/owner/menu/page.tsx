@@ -36,6 +36,7 @@ import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
 import { useRouter } from "next/navigation";
 import { AdminMenuItem } from "@/types/types";
 import { toast } from "sonner";
+import { apiFetch } from "@/lib/api";
 import { useForm, Resolver } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -80,9 +81,7 @@ export default function Page() {
   const categories = ["전체", "메인", "사이드", "음료", "주류"];
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/menu`, {
-      credentials: "include",
-    })
+    apiFetch("/menu")
       .then((res) => res.json())
       .then((data) => setMenuItems(data))
       .catch(() => toast.error("메뉴를 불러오지 못했습니다."));
@@ -95,15 +94,11 @@ export default function Page() {
 
   const toggleAvailability = async (id: string) => {
     const item = menuItems.find((i) => i.id === id)!;
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/menu/${id}`,
-      {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ available: !item.available }),
-      },
-    );
+    const res = await apiFetch(`/menu/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ available: !item.available }),
+    });
     if (!res.ok) return toast.error("상태 변경에 실패했습니다.");
     setMenuItems(
       menuItems.map((i) =>
@@ -113,13 +108,7 @@ export default function Page() {
   };
 
   const handleDelete = async (id: string) => {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/menu/${id}`,
-      {
-        method: "DELETE",
-        credentials: "include",
-      },
-    );
+    const res = await apiFetch(`/menu/${id}`, { method: "DELETE" });
     if (!res.ok) return toast.error("삭제에 실패했습니다.");
     setMenuItems(menuItems.filter((item) => item.id !== id));
   };
@@ -137,13 +126,12 @@ export default function Page() {
   };
 
   const onSubmit = async (data: MenuFormValues): Promise<void> => {
-    const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/menu${editingItem ? `/${editingItem.id}` : ""}`;
+    const path = `/menu${editingItem ? `/${editingItem.id}` : ""}`;
     const method = editingItem ? "PATCH" : "POST";
 
-    const res = await fetch(url, {
+    const res = await apiFetch(path, {
       method,
       headers: { "Content-Type": "application/json" },
-      credentials: "include",
       body: JSON.stringify(data),
     });
     if (!res.ok) {

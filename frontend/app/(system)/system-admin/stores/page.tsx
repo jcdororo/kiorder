@@ -43,6 +43,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { apiFetch } from "@/lib/api";
 import { Stores } from "@/types/types";
 
 const mockStores: Stores[] = [
@@ -117,10 +118,7 @@ export default function Page() {
   const router = useRouter();
 
   const handleLogout = async () => {
-    await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/logout`, {
-      method: 'POST',
-      credentials: 'include',
-    });
+    await apiFetch("/auth/logout", { method: "POST" });
     router.push('/login');
   };
 

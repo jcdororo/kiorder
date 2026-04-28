@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { ShoppingCart, Plus, Minus } from "lucide-react";
 import { CartItem, MenuItem } from "@/types/types";
+import { apiFetch } from "@/lib/api";
 import Image from "next/image";
 
 export default function Page() {
@@ -14,9 +15,7 @@ export default function Page() {
   const [isCartOpen, setIsCartOpen] = useState(false);
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/menu`, {
-      credentials: "include",
-    })
+    apiFetch("/menu")
       .then((res) => res.json())
       .then((data) => setMenus(data));
   }, []);
@@ -222,9 +221,8 @@ export default function Page() {
           </div>
           <button
             onClick={async () => {
-              await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/orders`, {
+              await apiFetch("/orders", {
                 method: "POST",
-                credentials: "include",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                   tableId,

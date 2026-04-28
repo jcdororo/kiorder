@@ -23,6 +23,7 @@ import {
 } from "recharts";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import { apiFetch } from "@/lib/api";
 import { toast } from "sonner";
 
 const mockDashboardStats = {
@@ -55,9 +56,7 @@ export default function Page() {
   );
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/stores/my`, {
-      credentials: "include",
-    })
+    apiFetch("/stores/my")
       .then(async (res) => {
         const text = await res.text();
         return text ? JSON.parse(text) : null;
@@ -69,10 +68,9 @@ export default function Page() {
 
   const handleCreateStore = async () => {
     if (!storeName.trim()) return;
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/stores`, {
+    const res = await apiFetch("/stores", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      credentials: "include",
       body: JSON.stringify({ name: storeName }),
     });
     if (res.ok) {
@@ -86,10 +84,7 @@ export default function Page() {
   };
 
   const handleLogout = async () => {
-    await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/logout`, {
-      method: "POST",
-      credentials: "include",
-    });
+    await apiFetch("/auth/logout", { method: "POST" });
     router.push("/login");
   };
   const stats = mockDashboardStats;

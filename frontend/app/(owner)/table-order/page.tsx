@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UtensilsCrossed } from "lucide-react";
+import { apiFetch } from "@/lib/api";
 
 type Table = { id: string; number: number };
 
@@ -12,9 +13,7 @@ export default function Page() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/tables`, {
-      credentials: "include",
-    })
+    apiFetch("/tables")
       .then((res) => res.json())
       .then((data) => setTables(data))
       .finally(() => setLoading(false));

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { Clock, Users, RefreshCw } from "lucide-react";
+import { apiFetch } from "@/lib/api";
 
 type WaitingEntry = {
   id: string;
@@ -37,9 +38,7 @@ export default function Page() {
 
   const fetchStatus = async () => {
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/waiting/status/${waitingId}`,
-      );
+      const res = await apiFetch(`/waiting/status/${waitingId}`);
       if (res.ok) setEntry(await res.json());
     } catch {}
   };
@@ -64,26 +63,20 @@ export default function Page() {
   }, []);
 
   const handleGuestResponse = async (response: "가고있어요" | "10분 늦어요") => {
-    await fetch(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/waiting/${waitingId}/guest-response`,
-      {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ response }),
-      },
-    );
+    await apiFetch(`/waiting/${waitingId}/guest-response`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ response }),
+    });
     setResponded(true);
   };
 
   const handleGuestCancel = async () => {
-    await fetch(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/waiting/${waitingId}/status`,
-      {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "취소" }),
-      },
-    );
+    await apiFetch(`/waiting/${waitingId}/status`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "취소" }),
+    });
     fetchRef.current();
   };
 
