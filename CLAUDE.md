@@ -112,15 +112,23 @@ Gitmoji + Conventional Commits 혼합 형식을 따른다.
 - 본문이 필요하면 "무엇을"이 아니라 **"왜"** 바꿨는지 설명
 - 여러 변경이 섞여 있으면 가장 핵심 타입 하나로 대표
 
+### 규칙 — 제목 작성법
+
+- 타입만으로 부족할 때: **대상 + 변경 내용** 을 함께 쓴다
+- "무엇을 했다" 보다 **"무엇을 어떻게/왜 했다"** 가 더 좋다
+- 너무 길면 본문에 이유를 한 줄 추가한다
+
 ### 예시
 
 ```
-✨ feat: 웨이팅 손님 응답 버튼 추가
-🐛 fix: 프록시 /unauthorized 무한 redirect 루프 수정
-🎨 style: 대시보드 다크 테마 적용
-🔧 chore: health 엔드포인트 추가
-♻️ refactor: apiFetch 공통 클라이언트로 fetch 교체
-🚀 deploy: Render 백엔드 배포 설정
+✨ feat: 웨이팅 /waiting/[id] 손님 응답 버튼 3종 추가 (가고있어요·늦어요·취소)
+🐛 fix: proxy.ts /unauthorized redirect 시 경로 누락으로 인한 무한 루프 수정
+🎨 style: 대시보드 라이트 테마 → DESIGN.md 기준 다크 테마 전환
+🔧 chore: Render 슬립 방지용 GET /health 엔드포인트 추가
+♻️ refactor: 전체 fetch → apiFetch 공통 클라이언트로 교체 (10개 파일)
+🚀 deploy: Render 백엔드 배포 환경변수 및 빌드 커맨드 설정
+📝 docs: AI 에이전트용 kiorder 디자인 시스템 문서 작성 (DESIGN.md)
+🔧 chore: Gitmoji + Conventional Commits 혼합 커밋 템플릿 설정
 ```
 
 ## 기술 스택 참고

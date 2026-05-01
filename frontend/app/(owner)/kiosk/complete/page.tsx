@@ -1,7 +1,7 @@
 import { CheckCircle2 } from "lucide-react";
 import Link from "next/link";
-import QrCode from "@/components/QrCode";
-import KioskCompleteCountdown from "@/components/KioskCompleteCountdown";
+import QrCode from "@/components/kiosk/QrCode";
+import KioskCompleteCountdown from "@/components/kiosk/KioskCompleteCountdown";
 
 export default async function Page({
   searchParams,
