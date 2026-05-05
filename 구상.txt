@@ -5,32 +5,36 @@
 # 기술 스택
 
 ## Frontend
-- Next.js (TypeScript)
-- Zustand
-- TanStack Query
+- Next.js 15 App Router (TypeScript)
 - Tailwind CSS
 - shadcn/ui
+- react-hook-form + zod (폼 검증)
+- react-qr-code (QR 생성)
+- lucide-react (아이콘)
+- sonner (토스트)
+- recharts (차트)
 
 ## Backend
 - NestJS (TypeScript)
-- Prisma (ORM)
+- Prisma 7 + @prisma/adapter-pg
+- class-validator / class-transformer (DTO 검증)
+- bcrypt (비밀번호 해싱)
+- @nestjs/jwt + passport (인증)
 
 ## Database & Realtime
-- Supabase (PostgreSQL + Realtime + Auth)
+- Supabase (PostgreSQL + Realtime)
 
 ## DevOps
 - GitHub
 - Vercel (Next.js 배포)
-- Railway or Render (NestJS 배포)
-- Figma
-
-## Test
-- Cypress (선택)
+- Railway (NestJS 배포)
 
 ---
 
 # 철학
-- Mobile first 개발방법론
+- 포트폴리오 기준 실무 패턴 적용
+- 다크 모던 UI 통일 (#111827 기반)
+- HttpOnly 쿠키 인증 (XSS/CSRF 방어)
 
 ---
 
@@ -42,23 +46,28 @@
                                           ↓
                               Supabase Realtime (DB 변경 감지)
                                           ↓
-                    [주방 화면] ←── 실시간 구독 ──── [테이블오더]
+                    [주방 화면] ←── 실시간 구독 ──── [웨이팅 관리]
 ```
 
 ## 역할 분담
-| 역할                        | 담당                |
-|-----------------------------|---------------------|
-| REST API + 비즈니스 로직    | NestJS              |
-| DB 스키마 + 타입세이프 쿼리 | Prisma              |
-| PostgreSQL DB + Realtime    | Supabase            |
-| UI + API 호출               | Next.js             |
+| 역할                        | 담당       |
+|-----------------------------|------------|
+| REST API + 비즈니스 로직    | NestJS     |
+| DB 스키마 + 타입세이프 쿼리 | Prisma 7   |
+| PostgreSQL DB + Realtime    | Supabase   |
+| UI + API 호출               | Next.js 15 |
+
+## 인증 흐름
+- 로그인 → 백엔드에서 JWT를 HttpOnly 쿠키로 발급
+- proxy.ts (Next.js middleware 역할) → 쿠키의 JWT를 jose로 검증 → role 기반 redirect
+- Role: SYSTEM_ADMIN → /system-admin/stores, STORE_OWNER → /owner/dashboard
 
 ## 배포 구조
-| 서비스   | 플랫폼          |
-|----------|-----------------|
-| Next.js  | Vercel          |
-| NestJS   | Railway / Render|
-| DB       | Supabase        |
+| 서비스  | 플랫폼   |
+|---------|----------|
+| Next.js | Vercel   |
+| NestJS  | Railway  |
+| DB      | Supabase |
 
 ---
 
@@ -67,7 +76,6 @@
 ## SaaS 구조
 kiorder는 식당 사장님들이 구독하여 사용하는 SaaS 플랫폼이다.
 구독 중인 사장님만 서비스를 이용할 수 있으며, 구독은 활성/비활성 2단계로 관리한다.
-(티어제 플랜은 추후 고도화 예정)
 
 ## 역할 구조
 | 역할 | 접근 조건 | 주요 권한 |
@@ -75,66 +83,123 @@ kiorder는 식당 사장님들이 구독하여 사용하는 SaaS 플랫폼이다
 | 시스템 어드민 | 플랫폼 운영자 계정 | 사장님 목록 관리, 구독 승인/해제 |
 | 사장님 (Store Owner) | 구독 활성 상태 | 매장 설정, 메뉴/주문/웨이팅 관리 |
 | 손님 - Kiosk | 누구나 | 웨이팅 등록, 대기 현황 확인 |
-| 손님 - Table Order | 누구나 | 메뉴 보기, 주문하기 |
-| 주방 | 내부 이용 | 주문 목록 확인 및 상태 변경 |
+| 손님 - Table Order | 누구나 | 메뉴 보기, 주문하기, 직원호출 |
+| 주방 요리사 | 내부 이용 | FOOD 주문만 확인 및 상태 변경 |
+| 홀 알바 | 내부 이용 | 전체 주문(요리+음료+서비스) 확인 |
 
 ---
 
-# 화면 구조
+# 라우트 구조 (확정)
 
-## 시스템 어드민
-- 사장님 목록 & 구독 관리 (활성/비활성 전환)
-
-## 사장님 (관리자)
-- 로그인 / 회원가입
-- 대시보드 (매장 현황 한눈에)
-- 테이블 배치 설정 ⭐ (드래그 & 드롭으로 자유 배치, 테이블별 좌석 수 설정)
-- 주문 현황 ⭐ (설정한 테이블 레이아웃 UI 그대로 표시, 테이블 클릭 시 해당 주문 상세)
-- 메뉴 관리
-- 웨이팅 관리 (호출, 취소, 순서 조정)
-
-**시나리오**
-사장님은 드래그 & 드롭으로 실제 매장 구조와 동일하게 테이블을 배치하고 좌석 수를 설정한다.
-주문 현황 화면은 설정한 레이아웃을 그대로 보여주며, 각 테이블을 클릭하면 해당 테이블의 주문을 확인할 수 있다.
-
-## 키오스크 (손님)
-- 웨이팅 등록
-- 등록 완료 (대기번호 + QR코드 발급)
-- 대기 현황 (실시간)
-
-**시나리오**
-고객은 키오스크에서 전화번호를 입력하고 대기표를 받는다.
-전화번호를 입력하는 순간 자신의 대기번호가 몇번인지 확인 가능하고,
-현재 몇번까지 입장하였는지 볼 수 있는 실시간 화면을 보여주는 QR코드가 생성된다.
-
-## 테이블오더 (손님)
-- 메뉴 목록 & 주문
-- 주문내역 (실시간 상태 업데이트)
-
-**시나리오**
-고객은 자리에 앉아 테이블오더로 메뉴를 주문하고 주문내역을 볼 수 있다.
-테이블은 URL 파라미터로 식별 (`/order?table=3`)
-
-## 주방
-- 주문표 목록 + 주문표 상세 (단일 페이지)
-- 상태 변경 (접수 → 조리중 → 완료)
-
-**시나리오**
-주방장은 들어온 주문표를 하나씩 확인하고 상태를 변경한다.
-새 주문은 Supabase Realtime으로 자동으로 나타난다.
+```
+app/
+├── layout.tsx
+├── page.tsx                          (홈 — 전체 페이지 링크)
+├── unauthorized/page.tsx
+├── (public)/
+│   ├── login/page.tsx
+│   └── waiting/[waitingId]/page.tsx  ← 손님용 대기현황 (QR 스캔)
+├── (system)/
+│   └── system-admin/stores/page.tsx
+└── (owner)/
+    ├── kiosk/
+    │   ├── waiting/page.tsx          ← 웨이팅 등록
+    │   └── complete/page.tsx         ← 등록완료 + QR 발급
+    ├── table-order/
+    │   ├── page.tsx                  ← 테이블 선택
+    │   └── [tableId]/menu/page.tsx   ← 메뉴 주문 + 직원호출 탭
+    ├── kitchen/
+    │   └── orders/page.tsx           ← 주방 전용 (FOOD만, Realtime)
+    ├── hall/
+    │   └── orders/page.tsx           ← 홀 알바 전용 (전체 주문, Realtime) [신규]
+    ├── pos/page.tsx
+    └── owner/
+        ├── dashboard/page.tsx
+        ├── menu/page.tsx             ← 메뉴 관리 (type 설정 포함)
+        ├── waiting/page.tsx          ← 웨이팅 관리 (Realtime)
+        └── table-settings/page.tsx
+```
 
 ---
 
-# 개발 순서 (안)
-1. Figma 디자인
-2. Supabase 프로젝트 생성 + DB 스키마 설계
-3. NestJS 백엔드 세팅 + Prisma 연결
-4. REST API 개발 (메뉴 / 주문 / 웨이팅)
-5. Next.js 프론트 세팅
-6. 키오스크 화면 개발
-7. 테이블오더 화면 개발
-8. 주방 화면 개발
-9. 관리자 대시보드 개발
-10. Supabase Realtime 연동
-11. 배포 (Vercel + Railway)
-12. README + 포트폴리오 정리
+# 화면별 구현 현황
+
+## 완료 ✅
+- 로그인 (role 기반 redirect)
+- 시스템 어드민 — 매장 관리
+- 사장님 — 대시보드 (mock), 메뉴 관리, 웨이팅 관리 (Realtime), 테이블 설정
+- 키오스크 — 웨이팅 등록, 등록완료(QR), 손님 대기현황 (15초 자동갱신)
+- 테이블오더 — 테이블 선택, 메뉴 주문
+- 주방 — 주문 목록 (Realtime, 자유 상태변경)
+- 인증 — HttpOnly 쿠키, proxy.ts role guard (STORE_OWNER 전용 경로 확장)
+- README 작성, docs/readme 브랜치 PR 생성
+- `/owner/waiting` 반응형 레이아웃 (모바일 카드 / 태블릿 아이콘 사이드바 / PC 풀)
+- `/owner/menu` 반응형 레이아웃 (모바일 카드 / 태블릿 아이콘 사이드바 / PC 풀)
+
+## 진행 예정 🔜
+
+### 홀 알바 화면 시스템 (아이템 단위 라우팅)
+- 배경: 주방은 요리에 집중, 홀 알바는 음료/서비스/직원호출까지 모두 담당
+- `MenuItem.type: FOOD | DRINK | SERVICE` 필드 추가
+  - FOOD: 요리 (주방+홀 화면)
+  - DRINK: 음료 (홀 화면만)
+  - SERVICE: 직원호출 전용 메뉴 물티슈/수저/그릇 등 (홀 화면만)
+- 주문 생성 시 OrderItem에 needsKitchen(type 기반) 복사 저장 → 이후 메뉴 설정 변경과 무관
+- `/kitchen/orders` — FOOD 아이템만 필터
+- `/hall/orders` — 전체 아이템 (요리 진행상황 + 음료 + 서비스 요청 한눈에)
+- 테이블오더 "직원호출" 탭 — SERVICE 메뉴 버튼형 UI
+
+---
+
+# 앞으로 할 일 (우선순위 순)
+
+### P1 — 포트폴리오 완성
+1. **홀 알바 화면 시스템** (아이템 단위 라우팅, 설계 확정)
+   - MenuItem.type 필드 추가 + 마이그레이션
+   - 메뉴 관리에 type 선택 UI 추가
+   - /kitchen/orders FOOD 필터링
+   - /hall/orders 신규 페이지
+   - 테이블오더 직원호출 탭
+2. **나머지 페이지 다크 UI** — pos
+3. **POS 결제화면 UI 기획** — 레이아웃/UX 방향 검토
+4. **배포** (Vercel + Railway) — 가장 나중에
+
+### P2 — 완성도 다듬기
+5. **table-order 주문내역 버튼** — 장바구니 옆에 주문내역 버튼 추가
+6. **table-order 주문 완료 모달** — 10초 후 자동 종료
+7. **컴포넌트 분리** (클린코드)
+8. **로딩 스켈레톤 + 에러 토스트 통일**
+
+### P3 — 기능 확장 (선택)
+9. **대시보드 통계 연동** — mock → 실제 집계 API
+10. **주문 알림음** (kitchen) — 신규 주문 수신 시 사운드
+11. **테이블 설정 저장** — 드래그 결과 DB 반영
+12. **영업시간 / 웨이팅 마감 ON/OFF**
+
+### P4 — 나중에 / 확장
+14. 메뉴 이미지 업로드 (Supabase Storage)
+15. 에러 바운더리
+16. 백엔드-프론트 공통 타입 패키지화
+17. 다매장 지원 (1 User : N Store)
+
+---
+
+# DB 스키마
+
+| 테이블     | 주요 컬럼 |
+|------------|-----------|
+| User       | id, email, password, role (SYSTEM_ADMIN / STORE_OWNER) |
+| Store      | id, userId, name |
+| Table      | id, storeId, number |
+| MenuItem   | id, storeId, name, category, price, image, available, type (FOOD/DRINK/SERVICE) |
+| Order      | id, storeId, tableId, status, requests, startedAt, completedAt |
+| OrderItem  | id, orderId, menuItemId, name, price, quantity, needsKitchen (Boolean) |
+| WaitingEntry | id, storeId, number, phone, partySize, status |
+
+---
+
+# Prisma 7 특이사항
+- schema.prisma datasource에 url 없음 (Prisma 7 breaking change)
+- 런타임: @prisma/adapter-pg로 직접 연결
+- 마이그레이션: prisma.config.ts의 DIRECT_URL 사용
+- `import 'dotenv/config'` → main.ts 최상단 필수

@@ -61,22 +61,36 @@
   - `/table-order`, `/kitchen`, `/kiosk`, `/pos` STORE_OWNER 전용으로 보호 추가
   - `/login` 접근 시 role 기반 redirect (SYSTEM_ADMIN → /system-admin/stores)
   - `SECRET` 모듈 상단 상수화, JWT_SECRET 누락 시 startup 에러 처리
+- `/owner/waiting` 반응형 레이아웃 완료 (모바일 카드 / 태블릿 아이콘 사이드바)
+- `/owner/menu` 반응형 레이아웃 완료 (모바일 카드 / 태블릿 아이콘 사이드바)
 
 ### 다음 할 일 (우선순위 순)
 
 #### P1 — 포트폴리오 완성
-- 배포 (Vercel + Railway)
-- 웨이팅 손님 응답 버튼 — `/waiting/[waitingId]`에서 {가고있어요, 10분 늦어요, 취소할게요} 추가, 사장님 웨이팅 관리에서 손님 응답 실시간 확인
-- kitchen/orders 자유 상태변경 + 카드 이동 애니메이션
-- 나머지 페이지 다크 UI (kitchen, dashboard, pos)
+- **홀 알바 화면 시스템** (설계 확정, 아이템 단위 라우팅)
+  - `MenuItem.type: FOOD | DRINK | SERVICE` 필드 추가 + 마이그레이션
+  - 메뉴 관리 페이지에 type 선택 UI 추가
+  - `/kitchen/orders` — FOOD 타입만 필터링
+  - `/hall/orders` 신규 — 전체 주문(FOOD+DRINK+SERVICE) 홀 알바용 화면
+- **테이블오더 직원호출 탭** — SERVICE 타입 메뉴(물티슈, 수저, 그릇 등) 버튼형 UI
+- **POS 화면 구현** (A안 — 고정 그리드 플로어맵)
+  - 백엔드: `GET /orders`에 tableId 필터 + `결제완료` 상태 추가
+  - 프론트: 다크 테마 + 실제 API 연동 + Supabase Realtime
+  - 결제 버튼 → PATCH 결제완료 → 테이블 비워짐
+- 나머지 페이지 다크 UI (pos 다크 테마는 POS 구현에 포함)
+- `/pos` 결제화면 UI 구성 기획
+- 배포 (Vercel + Railway) ← 가장 나중에
 
 #### P2 — 완성도 다듬기
 - table-order 주문내역 버튼 (장바구니 옆)
-- fetch 공통 클라이언트 (`lib/api.ts`)
-- 컴포넌트 분리 (클린코드) — lib/api.ts 이후 진행
+- table-order 주문 완료 모달 팝업 (10초 후 자동 종료)
+- 컴포넌트 분리 (클린코드)
 - 로딩 스켈레톤 + 에러 토스트 통일
+- 테스트 자동화 구현 (백엔드 핵심 API Supertest + E2E 골든패스)
 
-#### P3 — 선택
+#### P3 — 선택 / 내실 다지기
+- 컴포넌트 리팩토링 — 페이지별 컴포넌트 분리, 재사용 구조 정리
+- 프로젝트 코드 완벽 이해 — 전체 흐름 파악 및 내실 다지기
 - 대시보드 통계 연동, 주문 알림음, POS 결제 연동, 테이블 설정 저장, 웨이팅 마감 ON/OFF
 
 ## 커밋 메시지 규칙 (CRITICAL — 커밋 작성 시 반드시 적용)
