@@ -51,7 +51,12 @@ export default function Page() {
     return `${phone.slice(0, 3)}-${phone.slice(3, 7)}-${phone.slice(7)}`;
   };
 
-  const increasePartySize = () => setPartySize(partySize + 1);
+  const increasePartySize = () => {
+    if (partySize >= 12) {
+      return;
+    }
+    setPartySize(partySize + 1);
+  };
 
   const decreasePartySize = () => {
     if (partySize <= 0) return;
