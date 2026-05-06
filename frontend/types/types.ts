@@ -54,6 +54,8 @@ export interface WaitingCustomer {
   guestResponse?: string | null;
 }
 
+export type MenuItemType = "FOOD" | "DRINK" | "SERVICE";
+
 export interface AdminMenuItem {
   id: string;
   name: string;
@@ -62,6 +64,7 @@ export interface AdminMenuItem {
   image: string;
   description: string;
   available: boolean;
+  type: MenuItemType;
 }
 
 export interface Stores {

@@ -60,11 +60,24 @@ const menuSchema = z.object({
   name: z.string().min(1, "메뉴명을 입력해주세요."),
   category: z.string().min(1, "카테고리를 선택해주세요."),
   price: z.coerce.number().min(1, "가격을 입력해주세요."),
+  type: z.enum(["FOOD", "DRINK", "SERVICE"]),
   description: z.string().optional(),
   image: z.string().optional(),
 });
 
 type MenuFormValues = z.infer<typeof menuSchema>;
+
+const TYPE_LABEL: Record<string, string> = {
+  FOOD: "주방",
+  DRINK: "음료",
+  SERVICE: "직원호출",
+};
+
+const TYPE_COLOR: Record<string, string> = {
+  FOOD: "bg-orange-500/20 text-orange-300 border-orange-500/30",
+  DRINK: "bg-blue-500/20 text-blue-300 border-blue-500/30",
+  SERVICE: "bg-purple-500/20 text-purple-300 border-purple-500/30",
+};
 
 export default function Page() {
   const router = useRouter();
@@ -78,6 +91,7 @@ export default function Page() {
       name: "",
       category: "메인",
       price: 0,
+      type: "FOOD" as const,
       description: "",
       image: "",
     },
@@ -126,6 +140,7 @@ export default function Page() {
       name: item.name,
       category: item.category,
       price: item.price,
+      type: item.type ?? "FOOD",
       description: item.description ?? "",
       image: item.image ?? "",
     });
@@ -135,7 +150,8 @@ export default function Page() {
   const onSubmit = async (data: MenuFormValues): Promise<void> => {
     const path = `/menu${editingItem ? `/${editingItem.id}` : ""}`;
     const method = editingItem ? "PATCH" : "POST";
-
+    console.log("path", path);
+    
     const res = await apiFetch(path, {
       method,
       headers: { "Content-Type": "application/json" },
@@ -161,7 +177,14 @@ export default function Page() {
 
   const openAddDialog = () => {
     setEditingItem(null);
-    form.reset({ name: "", category: "메인", price: 0, description: "", image: "" });
+    form.reset({
+      name: "",
+      category: "메인",
+      price: 0,
+      type: "FOOD",
+      description: "",
+      image: "",
+    });
     setIsAddDialogOpen(true);
   };
 
@@ -226,6 +249,31 @@ export default function Page() {
                       <SelectItem value="사이드">사이드</SelectItem>
                       <SelectItem value="음료">음료</SelectItem>
                       <SelectItem value="주류">주류</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-300">메뉴 타입</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent className="bg-gray-800 border-gray-700 text-white">
+                      <SelectItem value="FOOD">주방 (요리)</SelectItem>
+                      <SelectItem value="DRINK">음료 (홀 처리)</SelectItem>
+                      <SelectItem value="SERVICE">
+                        직원호출 (물티슈·수저 등)
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -401,12 +449,17 @@ export default function Page() {
                 className="w-12 h-12 object-cover rounded-lg shrink-0"
               />
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <span className="text-white font-medium truncate">
                     {item.name}
                   </span>
                   <Badge className="bg-white/10 text-gray-300 border-white/20 shrink-0">
                     {item.category}
+                  </Badge>
+                  <Badge
+                    className={`shrink-0 ${TYPE_COLOR[item.type] ?? TYPE_COLOR.FOOD}`}
+                  >
+                    {TYPE_LABEL[item.type] ?? TYPE_LABEL.FOOD}
                   </Badge>
                 </div>
                 <div className="flex items-center gap-3">
@@ -458,6 +511,7 @@ export default function Page() {
                 </TableHead>
                 <TableHead className="text-gray-500">메뉴명</TableHead>
                 <TableHead className="text-gray-500">카테고리</TableHead>
+                <TableHead className="text-gray-500">타입</TableHead>
                 <TableHead className="text-gray-500">가격</TableHead>
                 <TableHead className="text-gray-500">상태</TableHead>
                 <TableHead className="text-gray-500 text-right">액션</TableHead>
@@ -480,6 +534,11 @@ export default function Page() {
                   <TableCell>
                     <Badge className="bg-white/10 text-gray-300 border-white/20 hover:bg-white/20">
                       {item.category}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={TYPE_COLOR[item.type] ?? TYPE_COLOR.FOOD}>
+                      {TYPE_LABEL[item.type] ?? TYPE_LABEL.FOOD}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-gray-400">

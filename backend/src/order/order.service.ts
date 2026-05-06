@@ -12,6 +12,13 @@ export class OrderService {
     });
     if (!table) throw new NotFoundException('테이블이 없습니다.');
 
+    const menuItemIds = dto.items.map((item) => item.menuItemId);
+    const menuItems = await this.prisma.menuItem.findMany({
+      where: { id: { in: menuItemIds } },
+      select: { id: true, type: true },
+    });
+    const typeMap = new Map(menuItems.map((m) => [m.id, m.type]));
+
     return this.prisma.order.create({
       data: {
         storeId: table.storeId,
@@ -23,6 +30,7 @@ export class OrderService {
             name: item.name,
             price: item.price,
             quantity: item.quantity,
+            needsKitchen: typeMap.get(item.menuItemId) === 'FOOD',
           })),
         },
       },

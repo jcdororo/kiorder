@@ -16,6 +16,12 @@ enum Role {
   STORE_OWNER
 }
 
+enum MenuItemType {
+  FOOD
+  DRINK
+  SERVICE
+}
+
 model User {
     id        String   @id @default(uuid())
     email     String   @unique
@@ -53,8 +59,9 @@ model User {
     price       Int
     image       String?
     description String?
-    available   Boolean     @default(true)
-    store       Store       @relation(fields: [storeId], references: [id])
+    available   Boolean      @default(true)
+    type        MenuItemType @default(FOOD)
+    store       Store        @relation(fields: [storeId], references: [id])
     orderItems  OrderItem[]
   }
 
@@ -74,11 +81,12 @@ model User {
 
   model OrderItem {
     id         String   @id @default(uuid())
-    orderId    String
-    menuItemId String
-    name       String
-    price      Int
-    quantity   Int
+    orderId      String
+    menuItemId   String
+    name         String
+    price        Int
+    quantity     Int
+    needsKitchen Boolean @default(true)
     order      Order    @relation(fields: [orderId], references: [id])
     menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
   }
