@@ -13,7 +13,7 @@ const STATUS_LIST: KitchenOrder["status"][] = ["접수됨", "조리중", "완료
 const COLUMN_BADGE: Record<KitchenOrder["status"], string> = {
   접수됨: "bg-white/10 text-gray-300 border border-white/20",
   조리중: "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30",
-  완료:   "bg-green-500/20 text-green-400 border border-green-500/30",
+  완료: "bg-green-500/20 text-green-400 border border-green-500/30",
 };
 
 export default function Page() {
@@ -26,27 +26,37 @@ export default function Page() {
     if (!res.ok) return;
     const data = await res.json();
     setOrders(
-      data.map((o: BackendOrder) => ({
-        id: o.id,
-        tableNumber: o.table.number,
-        orderNumber: `#${o.id.slice(-6).toUpperCase()}`,
-        status: o.status as KitchenOrder["status"],
-        items: o.orderItems.map((i) => ({ name: i.name, quantity: i.quantity })),
-        receivedAt: o.createdAt,
-        startedAt: o.startedAt ?? undefined,
-        completedAt: o.completedAt ?? undefined,
-      })),
+      data
+        .map((o: BackendOrder) => ({
+          id: o.id,
+          tableNumber: o.table.number,
+          orderNumber: `#${o.id.slice(-6).toUpperCase()}`,
+          status: o.status as KitchenOrder["status"],
+          items: o.orderItems
+            .filter((i) => i.needsKitchen)
+            .map((i) => ({ name: i.name, quantity: i.quantity })),
+          receivedAt: o.createdAt,
+          startedAt: o.startedAt ?? undefined,
+          completedAt: o.completedAt ?? undefined,
+        }))
+        .filter((o: KitchenOrder) => o.items.length > 0),
     );
   }, []);
 
   useEffect(() => {
-    void (async () => { await fetchOrders(); })();
+    void (async () => {
+      await fetchOrders();
+    })();
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     const channel = supabase
       .channel("orders-realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "Order" }, () => {
-        fetchOrders();
-      })
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "Order" },
+        () => {
+          fetchOrders();
+        },
+      )
       .subscribe();
     return () => {
       clearInterval(timer);
@@ -71,7 +81,7 @@ export default function Page() {
   const ordersByStatus = {
     접수됨: orders.filter((o) => o.status === "접수됨"),
     조리중: orders.filter((o) => o.status === "조리중"),
-    완료:   orders.filter((o) => o.status === "완료"),
+    완료: orders.filter((o) => o.status === "완료"),
   };
 
   return (
@@ -80,11 +90,16 @@ export default function Page() {
       <div className="bg-[#1f2937] border-b border-white/10 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/" className="text-gray-400 hover:text-white transition-colors">
+            <Link
+              href="/"
+              className="text-gray-400 hover:text-white transition-colors"
+            >
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <div>
-              <h1 className="text-xl font-bold text-white leading-none">주방 화면</h1>
+              <h1 className="text-xl font-bold text-white leading-none">
+                주방 화면
+              </h1>
               <p className="text-sm text-gray-400 mt-0.5">
                 {currentTime?.toLocaleTimeString("ko-KR") ?? ""}
               </p>
@@ -105,7 +120,9 @@ export default function Page() {
               {/* 컬럼 헤더 */}
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-base font-semibold text-white">{status}</h2>
-                <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${COLUMN_BADGE[status]}`}>
+                <span
+                  className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${COLUMN_BADGE[status]}`}
+                >
                   {ordersByStatus[status].length}
                 </span>
               </div>

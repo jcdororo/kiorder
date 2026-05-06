@@ -99,5 +99,5 @@ export type BackendOrder = {
   startedAt: string | null;
   completedAt: string | null;
   table: { number: number };
-  orderItems: { name: string; quantity: number }[];
+  orderItems: { name: string; quantity: number; needsKitchen: boolean }[];
 };
