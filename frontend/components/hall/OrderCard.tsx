@@ -111,20 +111,26 @@ export default function OrderCard({ order, status, currentTime, isLoading, onSta
         </div>
       ) : (
         <div className="grid grid-cols-3 gap-1.5">
-          {STATUS_LIST.map((s) => (
-            <button
-              key={s}
-              disabled={s === status}
-              onClick={() => onStatusChange(order.id, s)}
-              className={`text-xs font-medium py-1.5 rounded-lg transition-colors ${
-                s === status
-                  ? col.btnActive
-                  : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white"
-              }`}
-            >
-              {s}
-            </button>
-          ))}
+          {STATUS_LIST.map((s) => {
+            const isDisabled = s === status || (s === "완료" && !order.hallReceived);
+            return (
+              <button
+                key={s}
+                disabled={isDisabled}
+                onClick={() => onStatusChange(order.id, s)}
+                title={s === "완료" && !order.hallReceived ? "홀 받음 후 완료 가능" : undefined}
+                className={`text-xs font-medium py-1.5 rounded-lg transition-colors ${
+                  s === status
+                    ? col.btnActive
+                    : isDisabled
+                    ? "bg-white/5 text-gray-600 cursor-not-allowed"
+                    : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white"
+                }`}
+              >
+                {s}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>

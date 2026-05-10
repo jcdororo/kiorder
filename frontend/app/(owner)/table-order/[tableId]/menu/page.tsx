@@ -16,8 +16,9 @@ export default function Page() {
   const [activeCategory, setActiveCategory] = useState("전체");
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("menu");
-  const [requestingId, setRequestingId] = useState<string | null>(null);
-  const [requestedId, setRequestedId] = useState<string | null>(null);
+  const [serviceCart, setServiceCart] = useState<Record<string, number>>({});
+  const [isServiceSubmitting, setIsServiceSubmitting] = useState(false);
+  const [serviceOrdered, setServiceOrdered] = useState(false);
 
   useEffect(() => {
     apiFetch("/menu")
@@ -65,20 +66,28 @@ export default function Page() {
     });
   };
 
-  const requestService = async (menu: MenuItem) => {
-    if (requestingId) return;
-    setRequestingId(menu.id);
+  const updateServiceQty = (menuId: string, delta: number) => {
+    setServiceCart((prev) => {
+      const next = Math.max(0, (prev[menuId] ?? 0) + delta);
+      return { ...prev, [menuId]: next };
+    });
+  };
+
+  const submitServiceOrder = async () => {
+    const items = serviceMenus
+      .filter((m) => (serviceCart[m.id] ?? 0) > 0)
+      .map((m) => ({ menuItemId: m.id, name: m.name, price: m.price, quantity: serviceCart[m.id] }));
+    if (items.length === 0) return;
+    setIsServiceSubmitting(true);
     await apiFetch("/orders", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        tableId,
-        items: [{ menuItemId: menu.id, name: menu.name, price: menu.price, quantity: 1 }],
-      }),
+      body: JSON.stringify({ tableId, items }),
     });
-    setRequestingId(null);
-    setRequestedId(menu.id);
-    setTimeout(() => setRequestedId(null), 2000);
+    setIsServiceSubmitting(false);
+    setServiceCart({});
+    setServiceOrdered(true);
+    setTimeout(() => setServiceOrdered(false), 2000);
   };
 
   const totalAmount = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -179,43 +188,73 @@ export default function Page() {
 
       {/* 직원 호출 탭 */}
       {activeTab === "service" && (
-        <div className="flex-1 overflow-y-auto px-6 py-8 [&::-webkit-scrollbar]:hidden">
+        <div className="flex-1 flex flex-col overflow-hidden">
           {serviceMenus.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-gray-600">
+            <div className="flex flex-col items-center justify-center flex-1 text-gray-600">
               <Bell className="w-12 h-12 mb-3 opacity-30" />
               <p className="text-sm">등록된 직원호출 메뉴가 없습니다</p>
             </div>
           ) : (
             <>
-              <p className="text-center text-gray-400 text-sm mb-8">
-                필요한 항목을 터치하면 직원이 바로 확인합니다
-              </p>
-              <div className="grid grid-cols-2 gap-4 max-w-lg mx-auto">
-                {serviceMenus.map((menu) => {
-                  const isRequesting = requestingId === menu.id;
-                  const isRequested = requestedId === menu.id;
-                  return (
-                    <button
-                      key={menu.id}
-                      onClick={() => requestService(menu)}
-                      disabled={!!requestingId}
-                      className={`flex flex-col items-center justify-center gap-3 py-8 px-4 rounded-2xl border-2 transition-all ${
-                        isRequested
-                          ? "bg-green-500/20 border-green-500/50 text-green-400"
-                          : "bg-[#1f2937] border-white/10 text-white hover:border-orange-500/50 active:scale-95"
-                      }`}
-                    >
-                      {isRequested ? (
-                        <CheckCircle className="w-8 h-8 text-green-400" />
-                      ) : (
-                        <Bell className={`w-8 h-8 ${isRequesting ? "animate-pulse text-orange-400" : "text-orange-400"}`} />
-                      )}
-                      <span className="text-base font-semibold">
-                        {isRequested ? "요청됨!" : menu.name}
-                      </span>
-                    </button>
-                  );
-                })}
+              <div className="flex-1 overflow-y-auto px-6 py-6 [&::-webkit-scrollbar]:hidden">
+                <p className="text-center text-gray-400 text-sm mb-6">
+                  필요한 수량을 선택한 뒤 주문 버튼을 눌러주세요
+                </p>
+                <div className="grid grid-cols-2 gap-4 max-w-lg mx-auto">
+                  {serviceMenus.map((menu) => {
+                    const qty = serviceCart[menu.id] ?? 0;
+                    return (
+                      <div
+                        key={menu.id}
+                        className={`flex flex-col items-center gap-4 py-6 px-4 rounded-2xl border-2 transition-all ${
+                          qty > 0
+                            ? "bg-orange-500/10 border-orange-500/40"
+                            : "bg-[#1f2937] border-white/10"
+                        }`}
+                      >
+                        <Bell className={`w-7 h-7 ${qty > 0 ? "text-orange-400" : "text-gray-500"}`} />
+                        <span className="text-sm font-semibold text-white text-center">{menu.name}</span>
+                        <div className="flex items-center gap-4">
+                          <button
+                            onClick={() => updateServiceQty(menu.id, -1)}
+                            disabled={qty === 0}
+                            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-30 flex items-center justify-center transition-colors"
+                          >
+                            <Minus className="w-4 h-4" />
+                          </button>
+                          <span className="text-lg font-bold text-white w-6 text-center">{qty}</span>
+                          <button
+                            onClick={() => updateServiceQty(menu.id, 1)}
+                            className="w-8 h-8 rounded-full bg-orange-500 hover:bg-orange-600 flex items-center justify-center transition-colors"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 하단 주문 버튼 */}
+              <div className="shrink-0 px-6 py-4 border-t border-white/10 bg-[#111827]">
+                <button
+                  onClick={submitServiceOrder}
+                  disabled={isServiceSubmitting || Object.values(serviceCart).every((q) => q === 0) || serviceOrdered}
+                  className={`w-full py-3.5 rounded-xl font-semibold text-sm transition-colors flex items-center justify-center gap-2 ${
+                    serviceOrdered
+                      ? "bg-green-500/20 text-green-400 border border-green-500/30"
+                      : "bg-orange-500 hover:bg-orange-600 disabled:bg-white/10 disabled:text-gray-600 text-white"
+                  }`}
+                >
+                  {serviceOrdered ? (
+                    <><CheckCircle className="w-4 h-4" /> 요청 완료!</>
+                  ) : isServiceSubmitting ? (
+                    "처리 중..."
+                  ) : (
+                    <><Bell className="w-4 h-4" /> 주문</>
+                  )}
+                </button>
               </div>
             </>
           )}

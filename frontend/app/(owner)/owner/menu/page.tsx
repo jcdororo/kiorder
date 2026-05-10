@@ -59,7 +59,7 @@ import {
 const menuSchema = z.object({
   name: z.string().min(1, "메뉴명을 입력해주세요."),
   category: z.string().min(1, "카테고리를 선택해주세요."),
-  price: z.coerce.number().min(1, "가격을 입력해주세요."),
+  price: z.coerce.number().min(0, "가격을 입력해주세요."),
   type: z.enum(["FOOD", "DRINK", "SERVICE"]),
   description: z.string().optional(),
   image: z.string().optional(),
@@ -99,7 +99,7 @@ export default function Page() {
 
   const [menuItems, setMenuItems] = useState<AdminMenuItem[]>([]);
 
-  const categories = ["전체", "메인", "사이드", "음료", "주류"];
+  const categories = ["전체", "메인", "사이드", "음료", "주류", "직원호출"];
 
   useEffect(() => {
     apiFetch("/menu")
@@ -151,7 +151,7 @@ export default function Page() {
     const path = `/menu${editingItem ? `/${editingItem.id}` : ""}`;
     const method = editingItem ? "PATCH" : "POST";
     console.log("path", path);
-    
+
     const res = await apiFetch(path, {
       method,
       headers: { "Content-Type": "application/json" },
@@ -249,6 +249,7 @@ export default function Page() {
                       <SelectItem value="사이드">사이드</SelectItem>
                       <SelectItem value="음료">음료</SelectItem>
                       <SelectItem value="주류">주류</SelectItem>
+                      <SelectItem value="직원 호출">직원 호출</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
