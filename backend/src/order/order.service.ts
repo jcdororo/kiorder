@@ -52,6 +52,17 @@ export class OrderService {
     });
   }
 
+  async updateHallReceived(id: string, hallReceived: boolean) {
+    return this.prisma.order.update({
+      where: { id },
+      data: { hallReceived },
+      include: {
+        orderItems: { include: { menuItem: { select: { type: true } } } },
+        table: true,
+      },
+    });
+  }
+
   async updateOrderStatus(id: string, status: string) {
     const data: Record<string, unknown> = { status };
     if (status === '조리중') data.startedAt = new Date();

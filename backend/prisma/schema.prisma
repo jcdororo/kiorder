@@ -66,17 +66,18 @@ model User {
   }
 
   model Order {
-    id         String      @id @default(uuid())
-    storeId    String
-    tableId    String
-    status     String      @default("접수됨")
-    requests   String?
-    startedAt   DateTime?
-    completedAt DateTime?
-    createdAt   DateTime  @default(now())
-    store      Store       @relation(fields: [storeId], references: [id])
-    table      Table       @relation(fields: [tableId], references: [id])
-    orderItems OrderItem[]
+    id           String      @id @default(uuid())
+    storeId      String
+    tableId      String
+    status       String      @default("접수됨")
+    requests     String?
+    hallReceived Boolean     @default(false)
+    startedAt    DateTime?
+    completedAt  DateTime?
+    createdAt    DateTime    @default(now())
+    store        Store       @relation(fields: [storeId], references: [id])
+    table        Table       @relation(fields: [tableId], references: [id])
+    orderItems   OrderItem[]
   }
 
   model OrderItem {
