@@ -1,36 +1,42 @@
 "use client";
 
 import { Clock, Loader2 } from "lucide-react";
-import { KitchenOrder } from "@/types/types";
+import { HallOrder } from "@/types/types";
 
-const STATUS_LIST: KitchenOrder["status"][] = ["접수됨", "조리중", "완료"];
+const STATUS_LIST: HallOrder["status"][] = ["접수됨", "조리중", "완료"];
 
 const COLUMN_STYLE: Record<
-  KitchenOrder["status"],
+  HallOrder["status"],
   { cardBorder: string; btnActive: string }
 > = {
-  접수됨: { cardBorder: "border-white/10",      btnActive: "bg-orange-500 text-white" },
-  조리중: { cardBorder: "border-yellow-500/30",  btnActive: "bg-yellow-500 text-gray-900" },
-  완료:   { cardBorder: "border-green-500/30",   btnActive: "bg-green-600 text-white" },
+  접수됨: { cardBorder: "border-white/10",     btnActive: "bg-orange-500 text-white" },
+  조리중: { cardBorder: "border-yellow-500/30", btnActive: "bg-yellow-500 text-gray-900" },
+  완료:   { cardBorder: "border-green-500/30",  btnActive: "bg-green-600 text-white" },
+};
+
+const TYPE_BADGE: Record<string, string> = {
+  FOOD:    "bg-orange-500/20 text-orange-400 border-orange-500/30",
+  DRINK:   "bg-sky-500/20 text-sky-400 border-sky-500/30",
+  SERVICE: "bg-purple-500/20 text-purple-400 border-purple-500/30",
+};
+
+const TYPE_LABEL: Record<string, string> = {
+  FOOD:    "주방",
+  DRINK:   "음료",
+  SERVICE: "직원",
 };
 
 type Props = {
-  order: KitchenOrder;
-  status: KitchenOrder["status"];
+  order: HallOrder;
+  status: HallOrder["status"];
   currentTime: Date | null;
   isLoading: boolean;
-  onStatusChange: (orderId: string, newStatus: KitchenOrder["status"]) => void;
+  onStatusChange: (orderId: string, newStatus: HallOrder["status"]) => void;
   onHallReceive: (orderId: string, hallReceived: boolean) => void;
 };
 
 export default function OrderCard({ order, status, currentTime, isLoading, onStatusChange, onHallReceive }: Props) {
   const col = COLUMN_STYLE[status];
-  const hasHallItems = order.items.some((i) => !i.needsKitchen);
-
-  const getCookingTime = (startedAt?: string) => {
-    if (!startedAt || !currentTime) return null;
-    return Math.floor((currentTime.getTime() - new Date(startedAt).getTime()) / 60000);
-  };
 
   const getElapsedTime = (isoTime: string) => {
     if (!currentTime) return "...";
@@ -41,6 +47,11 @@ export default function OrderCard({ order, status, currentTime, isLoading, onSta
     if (days > 0)  return `${days}일 ${hours}시간 ${mins}분`;
     if (hours > 0) return `${hours}시간 ${mins}분`;
     return `${mins}분 전`;
+  };
+
+  const getCookingTime = (startedAt?: string) => {
+    if (!startedAt || !currentTime) return null;
+    return Math.floor((currentTime.getTime() - new Date(startedAt).getTime()) / 60000);
   };
 
   const cookingTime = getCookingTime(order.startedAt);
@@ -69,29 +80,29 @@ export default function OrderCard({ order, status, currentTime, isLoading, onSta
       {/* 주문 항목 */}
       <div className="space-y-1.5 mb-3">
         {order.items.map((item, idx) => (
-          <div key={idx} className="flex justify-between text-sm">
-            <span className={`${status === "완료" ? "text-gray-500" : item.needsKitchen ? "text-gray-200" : "text-sky-300"}`}>
-              {item.name}
-              {!item.needsKitchen && <span className="ml-1.5 text-[10px] text-sky-500">홀</span>}
-            </span>
+          <div key={idx} className="flex items-center justify-between text-sm">
+            <div className="flex items-center gap-2">
+              <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded border ${TYPE_BADGE[item.type] ?? TYPE_BADGE.FOOD}`}>
+                {TYPE_LABEL[item.type] ?? item.type}
+              </span>
+              <span className={status === "완료" ? "text-gray-500" : "text-gray-200"}>{item.name}</span>
+            </div>
             <span className="text-gray-500">× {item.quantity}</span>
           </div>
         ))}
       </div>
 
-      {/* 홀 받음 배지 (홀 아이템이 있는 경우만) */}
-      {hasHallItems && (
-        <button
-          onClick={() => onHallReceive(order.id, !order.hallReceived)}
-          className={`w-full text-xs font-medium py-1.5 rounded-lg mb-3 border transition-colors ${
-            order.hallReceived
-              ? "bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30"
-              : "bg-yellow-500/20 text-yellow-400 border-yellow-500/30 hover:bg-yellow-500/30"
-          }`}
-        >
-          {order.hallReceived ? "홀 받음 ✓" : "홀 미받음"}
-        </button>
-      )}
+      {/* 홀 받음 버튼 */}
+      <button
+        onClick={() => onHallReceive(order.id, !order.hallReceived)}
+        className={`w-full text-xs font-medium py-1.5 rounded-lg mb-3 border transition-colors ${
+          order.hallReceived
+            ? "bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30"
+            : "bg-yellow-500/20 text-yellow-400 border-yellow-500/30 hover:bg-yellow-500/30"
+        }`}
+      >
+        {order.hallReceived ? "홀 받음 ✓" : "홀 미받음 — 터치하여 접수"}
+      </button>
 
       {/* 상태 변경 버튼 */}
       {isLoading ? (

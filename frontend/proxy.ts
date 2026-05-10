@@ -11,7 +11,7 @@ const jwtSecret = process.env.JWT_SECRET;
 if (!jwtSecret) throw new Error("JWT_SECRET is not defined");
 const SECRET = new TextEncoder().encode(jwtSecret);
 
-const STORE_OWNER_PATHS = ["/owner", "/table-order", "/kitchen", "/kiosk", "/pos"];
+const STORE_OWNER_PATHS = ["/owner", "/table-order", "/kitchen", "/hall", "/kiosk", "/pos"];
 
 export async function proxy(request: NextRequest) {
   const token = request.cookies.get("access_token")?.value;
@@ -51,5 +51,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/owner/:path*", "/system-admin/:path*", "/table-order/:path*", "/kitchen/:path*", "/kiosk/:path*", "/pos/:path*", "/login"],
+  matcher: ["/owner/:path*", "/system-admin/:path*", "/table-order/:path*", "/kitchen/:path*", "/hall/:path*", "/kiosk/:path*", "/pos/:path*", "/login"],
 };

@@ -6,6 +6,7 @@ export interface MenuItem {
   image: string;
   description: string;
   available: boolean;
+  type?: string;
 }
 
 export interface CartItem {
@@ -39,7 +40,8 @@ export interface KitchenOrder {
   tableNumber: number;
   orderNumber: string;
   status: "접수됨" | "조리중" | "완료";
-  items: { name: string; quantity: number }[];
+  items: { name: string; quantity: number; needsKitchen: boolean }[];
+  hallReceived: boolean;
   receivedAt: string;
   startedAt?: string;
   completedAt?: string;
@@ -98,6 +100,24 @@ export type BackendOrder = {
   createdAt: string;
   startedAt: string | null;
   completedAt: string | null;
+  hallReceived: boolean;
   table: { number: number };
-  orderItems: { name: string; quantity: number; needsKitchen: boolean }[];
+  orderItems: {
+    name: string;
+    quantity: number;
+    needsKitchen: boolean;
+    menuItem: { type: string };
+  }[];
 };
+
+export interface HallOrder {
+  id: string;
+  tableNumber: number;
+  orderNumber: string;
+  status: "접수됨" | "조리중" | "완료";
+  items: { name: string; quantity: number; type: string }[];
+  hallReceived: boolean;
+  receivedAt: string;
+  startedAt?: string;
+  completedAt?: string;
+}

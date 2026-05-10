@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   Store,
   Users,
+  ConciergeBell,
 } from "lucide-react";
 import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
@@ -34,6 +35,12 @@ export default async function Page() {
       icon: ChefHat,
       color: "bg-red-500",
       links: [{ name: "주문 관리", path: "/kitchen/orders" }],
+    },
+    {
+      title: "홀 (직원용)",
+      icon: ConciergeBell,
+      color: "bg-sky-500",
+      links: [{ name: "홀 주문 관리", path: "/hall/orders" }],
     },
     {
       title: "포스기 (직원용)",
