@@ -1,75 +1,91 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import { CreditCard, ArrowLeft, CheckCircle2, Trash2 } from "lucide-react";
-import { Order } from "@/types/types";
+import { CreditCard, ArrowLeft, CheckCircle2, Trash2, Loader2 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { apiFetch } from "@/lib/api";
 
-const mockOrders: Order[] = [
-  {
-    id: "1",
-    tableNumber: 3,
-    items: [
-      { menuId: "1", menuName: "김치찌개", quantity: 2, price: 9000 },
-      { menuId: "7", menuName: "공기밥", quantity: 2, price: 1000 },
-    ],
-    status: "PENDING",
-    paymentStatus: "UNPAID",
-    totalAmount: 20000,
-    createdAt: new Date("2026-04-14T12:00:00"),
-  },
-  {
-    id: "2",
-    tableNumber: 5,
-    items: [
-      { menuId: "4", menuName: "제육볶음", quantity: 1, price: 12000 },
-      { menuId: "7", menuName: "공기밥", quantity: 1, price: 1000 },
-      { menuId: "10", menuName: "콜라", quantity: 2, price: 2000 },
-    ],
-    status: "COOKING",
-    paymentStatus: "UNPAID",
-    totalAmount: 17000,
-    createdAt: new Date("2026-04-14T11:55:00"),
-  },
-  {
-    id: "3",
-    tableNumber: 7,
-    items: [
-      { menuId: "6", menuName: "비빔밥", quantity: 2, price: 9500 },
-      { menuId: "8", menuName: "계란말이", quantity: 1, price: 6000 },
-    ],
-    status: "COMPLETED",
-    paymentStatus: "UNPAID",
-    totalAmount: 25000,
-    createdAt: new Date("2026-04-14T11:45:00"),
-    completedAt: new Date("2026-04-14T12:05:00"),
-  },
-  {
-    id: "4",
-    tableNumber: 2,
-    items: [
-      { menuId: "2", menuName: "된장찌개", quantity: 1, price: 8000 },
-      { menuId: "7", menuName: "공기밥", quantity: 1, price: 1000 },
-    ],
-    status: "COOKING",
-    paymentStatus: "UNPAID",
-    totalAmount: 9000,
-    createdAt: new Date("2026-04-14T12:02:00"),
-  },
-];
+type Table = { id: string; number: number };
+type PosOrderItem = { name: string; price: number; quantity: number };
+type PosOrder = {
+  id: string;
+  tableId: string;
+  status: string;
+  createdAt: string;
+  orderItems: PosOrderItem[];
+};
 
 export default function Page() {
-  const [selectedTable, setSelectedTable] = useState<number | null>(null);
+  const [tables, setTables] = useState<Table[]>([]);
+  const [allOrders, setAllOrders] = useState<PosOrder[]>([]);
+  const [tableOrders, setTableOrders] = useState<PosOrder[]>([]);
+  const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
-  const tables = Array.from({ length: 10 }, (_, i) => i + 1);
-  const tableOrders = selectedTable
-    ? mockOrders.filter(
-        (o) => o.tableNumber === selectedTable && o.paymentStatus === "UNPAID",
-      )
-    : [];
+  const [isPaying, setIsPaying] = useState(false);
+  const selectedTableRef = useRef<Table | null>(null);
 
-  const totalAmount = tableOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+  useEffect(() => {
+    selectedTableRef.current = selectedTable;
+  }, [selectedTable]);
 
-  const handlePayment = () => {
+  const fetchAllOrders = useCallback(async () => {
+    const res = await apiFetch("/orders");
+    if (res.ok) setAllOrders(await res.json());
+  }, []);
+
+  const fetchTableOrders = useCallback(async (tableId: string) => {
+    const res = await apiFetch(`/orders?tableId=${tableId}`);
+    if (res.ok) setTableOrders(await res.json());
+  }, []);
+
+  useEffect(() => {
+    const init = async () => {
+      const [tablesRes, ordersRes] = await Promise.all([
+        apiFetch("/tables"),
+        apiFetch("/orders"),
+      ]);
+      if (tablesRes.ok) setTables(await tablesRes.json());
+      if (ordersRes.ok) setAllOrders(await ordersRes.json());
+    };
+    init();
+  }, []);
+
+  useEffect(() => {
+    const run = async () => {
+      if (!selectedTable) { setTableOrders([]); return; }
+      const res = await apiFetch(`/orders?tableId=${selectedTable.id}`);
+      if (res.ok) setTableOrders(await res.json());
+    };
+    run();
+  }, [selectedTable]);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("pos-orders")
+      .on("postgres_changes", { event: "*", schema: "public", table: "Order" }, () => {
+        fetchAllOrders();
+        const cur = selectedTableRef.current;
+        if (cur) fetchTableOrders(cur.id);
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchAllOrders, fetchTableOrders]);
+
+  const handlePayment = async () => {
+    if (isPaying || !tableOrders.length) return;
+    setIsPaying(true);
+    await Promise.all(
+      tableOrders.map((o) =>
+        apiFetch(`/orders/${o.id}/status`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "결제완료" }),
+        }),
+      ),
+    );
+    setIsPaying(false);
     setShowSuccess(true);
     setTimeout(() => {
       setShowSuccess(false);
@@ -77,9 +93,13 @@ export default function Page() {
     }, 2000);
   };
 
-  const handleClearTable = () => {
-    setSelectedTable(null);
-  };
+  const totalAmount = tableOrders.reduce(
+    (sum, o) => sum + o.orderItems.reduce((s, i) => s + i.price * i.quantity, 0),
+    0,
+  );
+
+  const hasActiveOrders = (tableId: string) =>
+    allOrders.some((o) => o.tableId === tableId && o.status !== "결제완료");
 
   if (showSuccess) {
     return (
@@ -89,7 +109,9 @@ export default function Page() {
             <CheckCircle2 className="w-12 h-12 text-green-400" />
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">결제 완료!</h1>
-          <p className="text-gray-400">테이블 {selectedTable}번 결제가 완료되었습니다</p>
+          <p className="text-gray-400">
+            테이블 {selectedTable?.number}번 결제가 완료되었습니다
+          </p>
         </div>
       </div>
     );
@@ -123,23 +145,22 @@ export default function Page() {
             <div className="bg-[#1f2937] rounded-xl border border-white/10 p-6">
               <div className="grid grid-cols-5 gap-3">
                 {tables.map((table) => {
-                  const hasOrders = mockOrders.some(
-                    (o) => o.tableNumber === table && o.paymentStatus === "UNPAID",
-                  );
+                  const active = hasActiveOrders(table.id);
+                  const isSelected = selectedTable?.id === table.id;
                   return (
                     <button
-                      key={table}
+                      key={table.id}
                       onClick={() => setSelectedTable(table)}
                       className={`aspect-square rounded-xl flex flex-col items-center justify-center transition-all ${
-                        selectedTable === table
+                        isSelected
                           ? "bg-orange-500 text-white scale-105 shadow-lg shadow-orange-500/20"
-                          : hasOrders
-                          ? "bg-orange-500/10 border-2 border-orange-500/40 text-orange-400 hover:bg-orange-500/20"
-                          : "bg-[#374151] text-gray-400 hover:bg-[#4b5563] hover:text-white"
+                          : active
+                            ? "bg-orange-500/10 border-2 border-orange-500/40 text-orange-400 hover:bg-orange-500/20"
+                            : "bg-[#374151] text-gray-400 hover:bg-[#4b5563] hover:text-white"
                       }`}
                     >
-                      <div className="text-2xl font-bold mb-1">{table}</div>
-                      {hasOrders && selectedTable !== table && (
+                      <div className="text-2xl font-bold mb-1">{table.number}</div>
+                      {active && !isSelected && (
                         <div className="w-2 h-2 bg-orange-500 rounded-full" />
                       )}
                     </button>
@@ -162,7 +183,7 @@ export default function Page() {
           {/* 주문 내역 & 결제 */}
           <div>
             <h3 className="text-white font-semibold text-lg mb-4">
-              주문 내역{selectedTable && ` — 테이블 ${selectedTable}`}
+              주문 내역{selectedTable && ` — 테이블 ${selectedTable.number}`}
             </h3>
             <div className="bg-[#1f2937] rounded-xl border border-white/10 overflow-hidden">
               {!selectedTable ? (
@@ -180,19 +201,25 @@ export default function Page() {
                   <div className="p-6 max-h-96 overflow-y-auto [&::-webkit-scrollbar]:hidden">
                     <div className="space-y-6">
                       {tableOrders.map((order) => (
-                        <div key={order.id} className="pb-6 border-b border-white/10 last:border-0">
+                        <div
+                          key={order.id}
+                          className="pb-6 border-b border-white/10 last:border-0"
+                        >
                           <div className="text-xs text-gray-500 mb-3">
                             주문 #{order.id.slice(0, 8)} •{" "}
-                            {order.createdAt.toLocaleTimeString("ko-KR", {
+                            {new Date(order.createdAt).toLocaleTimeString("ko-KR", {
                               hour: "2-digit",
                               minute: "2-digit",
                             })}
                           </div>
                           <div className="space-y-2">
-                            {order.items.map((item, idx) => (
-                              <div key={idx} className="flex items-center justify-between text-sm">
+                            {order.orderItems.map((item, idx) => (
+                              <div
+                                key={idx}
+                                className="flex items-center justify-between text-sm"
+                              >
                                 <div className="flex items-center gap-2">
-                                  <span className="text-white">{item.menuName}</span>
+                                  <span className="text-white">{item.name}</span>
                                   <span className="text-gray-500">x{item.quantity}</span>
                                 </div>
                                 <span className="font-bold text-orange-400">
@@ -215,7 +242,7 @@ export default function Page() {
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <button
-                        onClick={handleClearTable}
+                        onClick={() => setSelectedTable(null)}
                         className="py-3.5 bg-transparent border border-white/20 hover:bg-white/10 text-gray-300 hover:text-white rounded-xl flex items-center justify-center gap-2 text-sm font-medium transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -223,9 +250,14 @@ export default function Page() {
                       </button>
                       <button
                         onClick={handlePayment}
-                        className="py-3.5 bg-orange-500 hover:bg-[#ea580c] text-white rounded-xl flex items-center justify-center gap-2 text-sm font-semibold transition-colors"
+                        disabled={isPaying}
+                        className="py-3.5 bg-orange-500 hover:bg-[#ea580c] disabled:opacity-60 text-white rounded-xl flex items-center justify-center gap-2 text-sm font-semibold transition-colors"
                       >
-                        <CreditCard className="w-4 h-4" />
+                        {isPaying ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <CreditCard className="w-4 h-4" />
+                        )}
                         카드 결제
                       </button>
                     </div>
