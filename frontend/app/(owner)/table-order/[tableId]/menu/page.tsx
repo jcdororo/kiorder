@@ -19,6 +19,19 @@ export default function Page() {
   const [serviceCart, setServiceCart] = useState<Record<string, number>>({});
   const [isServiceSubmitting, setIsServiceSubmitting] = useState(false);
   const [serviceOrdered, setServiceOrdered] = useState(false);
+  const [showOrderModal, setShowOrderModal] = useState(false);
+  const [countdown, setCountdown] = useState(10);
+
+  useEffect(() => {
+    if (!showOrderModal) return;
+    const interval = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) { clearInterval(interval); setShowOrderModal(false); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [showOrderModal]);
 
   useEffect(() => {
     apiFetch("/menu")
@@ -274,6 +287,23 @@ export default function Page() {
         </button>
       )}
 
+      {/* 주문 완료 모달 */}
+      {showOrderModal && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center">
+          <div className="bg-[#1f2937] border border-white/10 rounded-2xl px-10 py-10 flex flex-col items-center gap-4 shadow-2xl">
+            <CheckCircle className="w-16 h-16 text-green-400" />
+            <p className="text-white text-xl font-bold">주문이 완료되었습니다!</p>
+            <p className="text-gray-400 text-sm">{countdown}초 후 자동으로 닫힙니다</p>
+            <button
+              onClick={() => setShowOrderModal(false)}
+              className="mt-2 px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm transition-colors"
+            >
+              닫기
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 백드롭 */}
       {isCartOpen && (
         <div className="fixed inset-0 bg-black/60 z-40" onClick={() => setIsCartOpen(false)} />
@@ -338,7 +368,8 @@ export default function Page() {
               });
               setCart([]);
               setIsCartOpen(false);
-              alert("주문이 완료되었습니다!");
+              setCountdown(10);
+              setShowOrderModal(true);
             }}
             className="w-full py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
           >
