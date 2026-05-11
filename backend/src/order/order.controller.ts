@@ -5,6 +5,7 @@ import {
   Patch,
   Body,
   Param,
+  Query,
   UseGuards,
   Request,
 } from '@nestjs/common';
@@ -23,8 +24,11 @@ export class OrderController {
   }
 
   @Get()
-  getOrders(@Request() req: { user: { userId: string } }) {
-    return this.orderService.getOrders(req.user.userId);
+  getOrders(
+    @Request() req: { user: { userId: string } },
+    @Query('tableId') tableId?: string,
+  ) {
+    return this.orderService.getOrders(req.user.userId, tableId);
   }
 
   @Patch(':id/status')

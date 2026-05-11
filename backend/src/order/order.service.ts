@@ -38,12 +38,15 @@ export class OrderService {
     });
   }
 
-  async getOrders(userId: string) {
+  async getOrders(userId: string, tableId?: string) {
     const store = await this.prisma.store.findUnique({ where: { userId } });
     if (!store) throw new NotFoundException('매장이 없습니다.');
 
     return this.prisma.order.findMany({
-      where: { storeId: store.id },
+      where: {
+        storeId: store.id,
+        ...(tableId ? { tableId, NOT: { status: '결제완료' } } : {}),
+      },
       include: {
         orderItems: { include: { menuItem: { select: { type: true } } } },
         table: true,
@@ -66,7 +69,7 @@ export class OrderService {
   async updateOrderStatus(id: string, status: string) {
     const data: Record<string, unknown> = { status };
     if (status === '조리중') data.startedAt = new Date();
-    if (status === '완료') data.completedAt = new Date();
+    if (status === '완료' || status === '결제완료') data.completedAt = new Date();
     return this.prisma.order.update({
       where: { id },
       data,
