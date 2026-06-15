@@ -1,5 +1,6 @@
 "use client";
 
+import { Skeleton } from "@/components/shared/Skeleton";
 import { apiFetch } from "@/lib/api";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -8,12 +9,38 @@ type Table = { id: string; number: number };
 
 export default function Tables() {
   const [tables, setTables] = useState<Table[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    apiFetch("/tables")
-      .then((res) => res.json())
-      .then((data) => setTables(data));
+    const fetchTables = async () => {
+      try {
+        const res = await apiFetch("/tables");
+        if (!res.ok) throw new Error("테이블 조회 실패");
+        const data = await res.json();
+        setTables(data);
+      } catch (e) {
+        setError("테이블을 불러오지 못했습니다.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchTables();
   }, []);
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-4 gap-3">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <Skeleton key={i} className="aspect-square" />
+        ))}
+      </div>
+    );
+  }
+  if (error) {
+    return <p className="text-red-400 text-center py-4">{error}</p>;
+  }
+
   return (
     <div>
       {tables.length === 0 ? (
