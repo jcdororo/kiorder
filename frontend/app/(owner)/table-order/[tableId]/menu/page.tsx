@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { ShoppingCart, Plus, Minus, Bell, CheckCircle } from "lucide-react";
 import { CartItem, MenuItem } from "@/types/types";
@@ -14,13 +14,14 @@ export default function Page() {
   const [menus, setMenus] = useState<MenuItem[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [activeCategory, setActiveCategory] = useState("전체");
-  const [isCartOpen, setIsCartOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("menu");
   const [serviceCart, setServiceCart] = useState<Record<string, number>>({});
   const [isServiceSubmitting, setIsServiceSubmitting] = useState(false);
   const [serviceOrdered, setServiceOrdered] = useState(false);
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [countdown, setCountdown] = useState(10);
+  const mainRef = useRef<HTMLElement>(null);
+  const isScrollingRef = useRef(false);
 
   useEffect(() => {
     if (!showOrderModal) return;
@@ -40,16 +41,21 @@ export default function Page() {
   }, []);
 
   const serviceMenus = menus.filter((m) => m.available && m.type === "SERVICE");
-  const orderMenus = menus.filter((m) => m.available && m.type !== "SERVICE");
 
-  const categories = ["전체", ...Array.from(new Set(orderMenus.map((m) => m.category)))];
-  const grouped = categories
-    .filter((c) => c !== "전체")
-    .map((cat) => ({ category: cat, items: orderMenus.filter((m) => m.category === cat) }))
-    .filter((g) => g.items.length > 0);
+  const { categories, grouped } = useMemo(() => {
+    const orderMenus = menus.filter((m) => m.available && m.type !== "SERVICE");
+    const cats = ["전체", ...Array.from(new Set(orderMenus.map((m) => m.category)))];
+    const grp = cats
+      .filter((c) => c !== "전체")
+      .map((cat) => ({ category: cat, items: orderMenus.filter((m) => m.category === cat) }))
+      .filter((g) => g.items.length > 0);
+    return { categories: cats, grouped: grp };
+  }, [menus]);
 
   const scrollToCategory = (category: string) => {
     setActiveCategory(category);
+    isScrollingRef.current = true;
+    setTimeout(() => { isScrollingRef.current = false; }, 600);
     if (category === "전체") {
       document.getElementById("menu-top")?.scrollIntoView({ behavior: "smooth" });
       return;
@@ -92,16 +98,43 @@ export default function Page() {
       .map((m) => ({ menuItemId: m.id, name: m.name, price: m.price, quantity: serviceCart[m.id] }));
     if (items.length === 0) return;
     setIsServiceSubmitting(true);
-    await apiFetch("/orders", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tableId, items }),
-    });
-    setIsServiceSubmitting(false);
-    setServiceCart({});
-    setServiceOrdered(true);
-    setTimeout(() => setServiceOrdered(false), 2000);
+    try {
+      await apiFetch("/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tableId, items }),
+      });
+      setServiceCart({});
+      setServiceOrdered(true);
+      setTimeout(() => setServiceOrdered(false), 2000);
+    } finally {
+      setIsServiceSubmitting(false);
+    }
   };
+
+  useEffect(() => {
+    if (!mainRef.current || grouped.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (isScrollingRef.current) return;
+        const visible = entries.filter((e) => e.isIntersecting);
+        if (visible.length === 0) return;
+        const top = visible.reduce((a, b) =>
+          a.boundingClientRect.top < b.boundingClientRect.top ? a : b
+        );
+        setActiveCategory(top.target.id.replace("cat-", ""));
+      },
+      { root: mainRef.current, rootMargin: "-10% 0px -80% 0px", threshold: 0 }
+    );
+
+    grouped.forEach(({ category }) => {
+      const el = document.getElementById(`cat-${category}`);
+      if (el) observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, [grouped]);
 
   const totalAmount = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -160,7 +193,7 @@ export default function Page() {
           </aside>
 
           {/* 메뉴 콘텐츠 */}
-          <main className="flex-1 overflow-y-auto px-6 py-4 pb-8 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          <main ref={mainRef} className="flex-1 overflow-y-auto px-6 py-4 pb-8 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <div id="menu-top" />
             {grouped.map(({ category, items }) => (
               <section key={category} id={`cat-${category}`} className="mb-10">
@@ -196,6 +229,70 @@ export default function Page() {
               </section>
             ))}
           </main>
+
+          {/* 장바구니 고정 패널 */}
+          <aside className="w-1/4 shrink-0 bg-[#1f2937] border-l border-white/10 flex flex-col">
+            <div className="px-6 py-5 border-b border-white/10">
+              <h3 className="text-white font-semibold text-lg">장바구니</h3>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 [&::-webkit-scrollbar]:hidden">
+              {cart.length === 0 ? (
+                <p className="text-gray-400 text-center mt-10 text-sm">담긴 메뉴가 없습니다</p>
+              ) : (
+                cart.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      {item.image ? (
+                        <Image src={item.image} alt={item.name} width={40} height={40} className="w-10 h-10 rounded-lg object-cover shrink-0" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-lg bg-[#374151] flex items-center justify-center shrink-0">🍽️</div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-white truncate">{item.name}</p>
+                        <p className="text-xs text-gray-400">{item.price.toLocaleString()}원</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button onClick={() => removeFromCart(item.id)} className="w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center">
+                        <Minus className="w-3 h-3" />
+                      </button>
+                      <span className="w-4 text-center text-sm">{item.quantity}</span>
+                      <button onClick={() => addToCart(menus.find((m) => m.id === item.id)!)} className="w-6 h-6 rounded-full bg-orange-500 hover:bg-orange-600 flex items-center justify-center">
+                        <Plus className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="px-6 py-5 border-t border-white/10">
+              <div className="flex justify-between items-center mb-4">
+                <span className="text-gray-400 text-sm">총 {totalItems}개</span>
+                <span className="text-white font-bold text-lg">{totalAmount.toLocaleString()}원</span>
+              </div>
+              <button
+                disabled={cart.length === 0}
+                onClick={async () => {
+                  await apiFetch("/orders", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      tableId,
+                      items: cart.map((item) => ({ menuItemId: item.id, name: item.name, price: item.price, quantity: item.quantity })),
+                    }),
+                  });
+                  setCart([]);
+                  setCountdown(10);
+                  setShowOrderModal(true);
+                }}
+                className="w-full py-3 bg-orange-500 hover:bg-orange-600 disabled:bg-white/10 disabled:text-gray-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
+              >
+                <ShoppingCart className="w-5 h-5" /> 주문하기
+              </button>
+            </div>
+          </aside>
         </div>
       )}
 
@@ -274,19 +371,6 @@ export default function Page() {
         </div>
       )}
 
-      {/* FAB 버튼 (메뉴 탭일 때만) */}
-      {activeTab === "menu" && cart.length > 0 && (
-        <button
-          onClick={() => setIsCartOpen(true)}
-          className="fixed bottom-8 right-8 w-16 h-16 bg-orange-500 hover:bg-orange-600 text-white rounded-full shadow-2xl flex items-center justify-center transition-colors z-40"
-        >
-          <ShoppingCart className="w-6 h-6" />
-          <span className="absolute -top-1 -right-1 w-6 h-6 bg-white text-orange-500 text-xs font-bold rounded-full flex items-center justify-center">
-            {totalItems}
-          </span>
-        </button>
-      )}
-
       {/* 주문 완료 모달 */}
       {showOrderModal && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center">
@@ -304,79 +388,6 @@ export default function Page() {
         </div>
       )}
 
-      {/* 백드롭 */}
-      {isCartOpen && (
-        <div className="fixed inset-0 bg-black/60 z-40" onClick={() => setIsCartOpen(false)} />
-      )}
-
-      {/* 장바구니 사이드바 */}
-      <div
-        className={`fixed top-0 right-0 h-full w-80 bg-[#1f2937] border-l border-white/10 z-50 flex flex-col transition-transform duration-300 ${
-          isCartOpen ? "translate-x-0" : "translate-x-full"
-        }`}
-      >
-        <div className="flex items-center justify-between px-6 py-5 border-b border-white/10">
-          <h3 className="text-white font-semibold text-lg m-0">장바구니</h3>
-          <button onClick={() => setIsCartOpen(false)} className="text-gray-400 hover:text-white text-2xl leading-none">×</button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-          {cart.length === 0 ? (
-            <p className="text-gray-400 text-center mt-10">담긴 메뉴가 없습니다</p>
-          ) : (
-            cart.map((item) => (
-              <div key={item.id} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  {item.image ? (
-                    <Image src={item.image} alt={item.name} width={44} height={44} className="w-11 h-11 rounded-lg object-cover" />
-                  ) : (
-                    <div className="w-11 h-11 rounded-lg bg-[#374151] flex items-center justify-center">🍽️</div>
-                  )}
-                  <div>
-                    <p className="text-sm font-medium text-white">{item.name}</p>
-                    <p className="text-xs text-gray-400">{item.price.toLocaleString()}원</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => removeFromCart(item.id)} className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center">
-                    <Minus className="w-3.5 h-3.5" />
-                  </button>
-                  <span className="w-5 text-center text-sm">{item.quantity}</span>
-                  <button onClick={() => addToCart(menus.find((m) => m.id === item.id)!)} className="w-7 h-7 rounded-full bg-orange-500 hover:bg-orange-600 flex items-center justify-center">
-                    <Plus className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        <div className="px-6 py-5 border-t border-white/10">
-          <div className="flex justify-between items-center mb-4">
-            <span className="text-gray-400 text-sm">총 {totalItems}개</span>
-            <span className="text-white font-bold text-xl">{totalAmount.toLocaleString()}원</span>
-          </div>
-          <button
-            onClick={async () => {
-              await apiFetch("/orders", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  tableId,
-                  items: cart.map((item) => ({ menuItemId: item.id, name: item.name, price: item.price, quantity: item.quantity })),
-                }),
-              });
-              setCart([]);
-              setIsCartOpen(false);
-              setCountdown(10);
-              setShowOrderModal(true);
-            }}
-            className="w-full py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
-          >
-            <ShoppingCart className="w-5 h-5" /> 주문하기
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

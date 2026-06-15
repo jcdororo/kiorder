@@ -9,7 +9,7 @@ export default async function Page() {
           <UtensilsCrossed className="w-6 h-6 text-white" />
         </div>
         <span className="text-white text-xl font-bold tracking-tight">
-          맛있는 식당
+          Kiorder
         </span>
       </div>
 
@@ -20,7 +20,6 @@ export default async function Page() {
         <p className="text-gray-400 text-sm text-center mb-6">
           이 태블릿의 테이블 번호를 선택하세요
         </p>
-
         <Tables />
       </div>
     </div>
