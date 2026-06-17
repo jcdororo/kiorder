@@ -2,12 +2,21 @@
 
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useParams } from "next/navigation";
-import { ShoppingCart, Plus, Minus, Bell, CheckCircle } from "lucide-react";
+import { ShoppingCart, Plus, Minus, Bell, CheckCircle, Receipt } from "lucide-react";
 import { CartItem, MenuItem } from "@/types/types";
 import { apiFetch } from "@/lib/api";
 import Image from "next/image";
+import { useQuery } from "@tanstack/react-query";
 
 type Tab = "menu" | "service";
+
+type TableOrder = {
+  id: string;
+  status: string;
+  createdAt: string;
+  orderItems: { name: string; price: number; quantity: number }[];
+};
+
 
 export default function Page() {
   const { tableId } = useParams<{ tableId: string }>();
@@ -20,8 +29,51 @@ export default function Page() {
   const [serviceOrdered, setServiceOrdered] = useState(false);
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [countdown, setCountdown] = useState(10);
+  const [cartView, setCartView] = useState<"cart" | "receipt">("cart");
   const mainRef = useRef<HTMLElement>(null);
   const isScrollingRef = useRef(false);
+
+  const { data: tableOrders = [], refetch: refetchOrders } = useQuery<TableOrder[]>({
+    queryKey: ["table-orders", tableId],
+    queryFn: async () => {
+      const res = await apiFetch(`/orders?tableId=${tableId}`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
+  const { data: allTables = [] } = useQuery<{ id: string; number: number }[]>({
+    queryKey: ["tables"],
+    queryFn: async () => {
+      const res = await apiFetch("/tables");
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+  const tableNumber = allTables.find((t) => t.id === tableId)?.number ?? "-";
+
+  const receiptItems = useMemo(() => {
+    const map = new Map<string, { name: string; price: number; quantity: number }>();
+    tableOrders.forEach((order) => {
+      order.orderItems.forEach((item) => {
+        const existing = map.get(item.name);
+        if (existing) {
+          existing.quantity += item.quantity;
+        } else {
+          map.set(item.name, { name: item.name, price: item.price, quantity: item.quantity });
+        }
+      });
+    });
+    return Array.from(map.values());
+  }, [tableOrders]);
+
+  const grandTotal = receiptItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  const receiptTime = tableOrders.length > 0
+    ? new Date(tableOrders[0].createdAt).toLocaleString("ko-KR", {
+        year: "numeric", month: "2-digit", day: "2-digit",
+        hour: "2-digit", minute: "2-digit",
+      })
+    : null;
 
   useEffect(() => {
     if (!showOrderModal) return;
@@ -230,68 +282,151 @@ export default function Page() {
             ))}
           </main>
 
-          {/* 장바구니 고정 패널 */}
+          {/* 장바구니 / 주문 내역 패널 */}
           <aside className="w-1/4 shrink-0 bg-[#1f2937] border-l border-white/10 flex flex-col">
-            <div className="px-6 py-5 border-b border-white/10">
-              <h3 className="text-white font-semibold text-lg">장바구니</h3>
-            </div>
-
-            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 [&::-webkit-scrollbar]:hidden">
-              {cart.length === 0 ? (
-                <p className="text-gray-400 text-center mt-10 text-sm">담긴 메뉴가 없습니다</p>
-              ) : (
-                cart.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      {item.image ? (
-                        <Image src={item.image} alt={item.name} width={40} height={40} className="w-10 h-10 rounded-lg object-cover shrink-0" />
-                      ) : (
-                        <div className="w-10 h-10 rounded-lg bg-[#374151] flex items-center justify-center shrink-0">🍽️</div>
-                      )}
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-white truncate">{item.name}</p>
-                        <p className="text-xs text-gray-400">{item.price.toLocaleString()}원</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <button onClick={() => removeFromCart(item.id)} className="w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center">
-                        <Minus className="w-3 h-3" />
-                      </button>
-                      <span className="w-4 text-center text-sm">{item.quantity}</span>
-                      <button onClick={() => addToCart(menus.find((m) => m.id === item.id)!)} className="w-6 h-6 rounded-full bg-orange-500 hover:bg-orange-600 flex items-center justify-center">
-                        <Plus className="w-3 h-3" />
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            <div className="px-6 py-5 border-t border-white/10">
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-gray-400 text-sm">총 {totalItems}개</span>
-                <span className="text-white font-bold text-lg">{totalAmount.toLocaleString()}원</span>
-              </div>
+            {/* 토글 태그 */}
+            <div className="px-4 py-3 border-b border-white/10 flex gap-2">
               <button
-                disabled={cart.length === 0}
-                onClick={async () => {
-                  await apiFetch("/orders", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      tableId,
-                      items: cart.map((item) => ({ menuItemId: item.id, name: item.name, price: item.price, quantity: item.quantity })),
-                    }),
-                  });
-                  setCart([]);
-                  setCountdown(10);
-                  setShowOrderModal(true);
-                }}
-                className="w-full py-3 bg-orange-500 hover:bg-orange-600 disabled:bg-white/10 disabled:text-gray-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
+                onClick={() => setCartView("cart")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  cartView === "cart" ? "bg-orange-500 text-white" : "bg-white/5 text-gray-400 hover:text-white"
+                }`}
               >
-                <ShoppingCart className="w-5 h-5" /> 주문하기
+                <ShoppingCart className="w-3.5 h-3.5" />
+                장바구니
+                {totalItems > 0 && (
+                  <span className={`text-[10px] rounded-full w-4 h-4 flex items-center justify-center leading-none ${
+                    cartView === "cart" ? "bg-white/25" : "bg-orange-500 text-white"
+                  }`}>
+                    {totalItems}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => setCartView("receipt")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  cartView === "receipt" ? "bg-orange-500 text-white" : "bg-white/5 text-gray-400 hover:text-white"
+                }`}
+              >
+                <Receipt className="w-3.5 h-3.5" />
+                주문 내역
+                {tableOrders.length > 0 && (
+                  <span className={`text-[10px] rounded-full w-4 h-4 flex items-center justify-center leading-none ${
+                    cartView === "receipt" ? "bg-white/25" : "bg-orange-500 text-white"
+                  }`}>
+                    {tableOrders.length}
+                  </span>
+                )}
               </button>
             </div>
+
+            {/* 장바구니 뷰 */}
+            {cartView === "cart" && (
+              <>
+                <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 [&::-webkit-scrollbar]:hidden">
+                  {cart.length === 0 ? (
+                    <p className="text-gray-400 text-center mt-10 text-sm">담긴 메뉴가 없습니다</p>
+                  ) : (
+                    cart.map((item) => (
+                      <div key={item.id} className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          {item.image ? (
+                            <Image src={item.image} alt={item.name} width={40} height={40} className="w-10 h-10 rounded-lg object-cover shrink-0" />
+                          ) : (
+                            <div className="w-10 h-10 rounded-lg bg-[#374151] flex items-center justify-center shrink-0">🍽️</div>
+                          )}
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-white truncate">{item.name}</p>
+                            <p className="text-xs text-gray-400">{item.price.toLocaleString()}원</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button onClick={() => removeFromCart(item.id)} className="w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center">
+                            <Minus className="w-3 h-3" />
+                          </button>
+                          <span className="w-4 text-center text-sm">{item.quantity}</span>
+                          <button onClick={() => addToCart(menus.find((m) => m.id === item.id)!)} className="w-6 h-6 rounded-full bg-orange-500 hover:bg-orange-600 flex items-center justify-center">
+                            <Plus className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+                <div className="px-6 py-5 border-t border-white/10">
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="text-gray-400 text-sm">총 {totalItems}개</span>
+                    <span className="text-white font-bold text-lg">{totalAmount.toLocaleString()}원</span>
+                  </div>
+                  <button
+                    disabled={cart.length === 0}
+                    onClick={async () => {
+                      await apiFetch("/orders", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          tableId,
+                          items: cart.map((item) => ({ menuItemId: item.id, name: item.name, price: item.price, quantity: item.quantity })),
+                        }),
+                      });
+                      setCart([]);
+                      setCountdown(10);
+                      setShowOrderModal(true);
+                      void refetchOrders();
+                    }}
+                    className="w-full py-3 bg-orange-500 hover:bg-orange-600 disabled:bg-white/10 disabled:text-gray-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
+                  >
+                    <ShoppingCart className="w-5 h-5" /> 주문하기
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* 영수증 뷰 */}
+            {cartView === "receipt" && (
+              <div className="flex-1 overflow-y-auto py-5 px-3 [&::-webkit-scrollbar]:hidden">
+                {tableOrders.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-gray-600">
+                    <Receipt className="w-10 h-10 mb-2 opacity-30" />
+                    <p className="text-xs">아직 주문 내역이 없습니다</p>
+                  </div>
+                ) : (
+                  <div className="bg-[#111827] rounded-xl border border-white/10 overflow-hidden">
+                    <div className="text-center px-4 pt-5 pb-4 border-b border-dashed border-white/20">
+                      <p className="text-gray-500 text-[10px] tracking-[0.3em] mb-2">영 수 증</p>
+                      <p className="text-white text-lg font-bold">테이블 {tableNumber}번</p>
+                      {receiptTime && <p className="text-gray-500 text-[10px] mt-1">{receiptTime}</p>}
+                    </div>
+                    <div className="px-4 py-3 border-b border-dashed border-white/20 space-y-2">
+                      <div className="flex justify-between text-[10px] text-gray-600 pb-2 border-b border-white/10">
+                        <span>메뉴</span>
+                        <span>금액</span>
+                      </div>
+                      {receiptItems.map((item, i) => (
+                        <div key={i} className="flex justify-between items-baseline text-xs">
+                          <div className="flex items-baseline gap-1 min-w-0 mr-2">
+                            <span className="text-white truncate">{item.name}</span>
+                            <span className="text-gray-500 shrink-0">×{item.quantity}</span>
+                          </div>
+                          <span className="text-orange-400 tabular-nums shrink-0">
+                            {(item.price * item.quantity).toLocaleString()}원
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="px-4 py-4 flex justify-between items-center">
+                      <span className="text-white font-bold text-xs tracking-widest">합  계</span>
+                      <span className="text-orange-400 text-base font-bold tabular-nums">
+                        {grandTotal.toLocaleString()}원
+                      </span>
+                    </div>
+                    <div className="text-center py-3 border-t border-dashed border-white/20">
+                      <p className="text-gray-600 text-[10px] tracking-[0.2em]">감사합니다</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </aside>
         </div>
       )}
@@ -378,12 +513,21 @@ export default function Page() {
             <CheckCircle className="w-16 h-16 text-green-400" />
             <p className="text-white text-xl font-bold">주문이 완료되었습니다!</p>
             <p className="text-gray-400 text-sm">{countdown}초 후 자동으로 닫힙니다</p>
-            <button
-              onClick={() => setShowOrderModal(false)}
-              className="mt-2 px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm transition-colors"
-            >
-              닫기
-            </button>
+            <div className="flex gap-3 mt-2">
+              <button
+                onClick={() => setShowOrderModal(false)}
+                className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm transition-colors"
+              >
+                닫기
+              </button>
+              <button
+                onClick={() => { setShowOrderModal(false); setCartView("receipt"); }}
+                className="px-6 py-2 bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 rounded-xl text-sm transition-colors flex items-center gap-1.5"
+              >
+                <Receipt className="w-3.5 h-3.5" />
+                주문 내역
+              </button>
+            </div>
           </div>
         </div>
       )}
