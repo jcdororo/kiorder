@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +25,7 @@ import { useRouter } from "next/navigation";
 import { WaitingCustomer } from "@/types/types";
 import { supabase } from "@/lib/supabase";
 import { apiFetch } from "@/lib/api";
+import { useQuery, useMutation } from "@tanstack/react-query";
 
 type WaitingRow = WaitingCustomer & { waitingTime: string };
 
@@ -42,81 +43,58 @@ const statusBadgeClass = (status: WaitingCustomer["status"]) => {
 
 export default function Page() {
   const router = useRouter();
-  const [customers, setCustomers] = useState<WaitingRow[]>([]);
+
+  const { data: customers = [], refetch } = useQuery<WaitingRow[]>({
+    queryKey: ["waiting"],
+    queryFn: async () => {
+      const data = await apiFetch("/waiting").then((r) => r.json());
+      return data.map(
+        (e: {
+          id: string;
+          number: number;
+          phone: string;
+          createdAt: string;
+          status: WaitingCustomer["status"];
+          guestResponse?: string | null;
+        }) => ({
+          id: e.id,
+          number: e.number,
+          phone: e.phone,
+          registeredAt: e.createdAt,
+          status: e.status,
+          guestResponse: e.guestResponse,
+          waitingTime: `${Math.floor((Date.now() - new Date(e.createdAt).getTime()) / 60000)}분`,
+        }),
+      );
+    },
+  });
 
   useEffect(() => {
-    const fetchWaiting = () =>
-      apiFetch("/waiting")
-        .then((r) => r.json())
-        .then((data) =>
-          setCustomers(
-            data.map(
-              (e: {
-                id: string;
-                number: number;
-                phone: string;
-                createdAt: string;
-                status: WaitingCustomer["status"];
-                guestResponse?: string | null;
-              }) => ({
-                id: e.id,
-                number: e.number,
-                phone: e.phone,
-                registeredAt: e.createdAt,
-                status: e.status,
-                guestResponse: e.guestResponse,
-                waitingTime: `${Math.floor((Date.now() - new Date(e.createdAt).getTime()) / 60000)}분`,
-              }),
-            ),
-          ),
-        );
-
-    fetchWaiting();
-
     const channel = supabase
       .channel("waiting-realtime")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "WaitingEntry" },
-        () => fetchWaiting(),
+        () => { void refetch(); },
       )
       .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [refetch]);
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
+  const statusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      await apiFetch(`/waiting/${id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+    },
+    onSuccess: () => { void refetch(); },
+  });
 
-  const updateStatus = async (id: string, status: string) => {
-    await apiFetch(`/waiting/${id}/status`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    });
-  };
-
-  const handleCall = async (id: string) => {
-    await updateStatus(id, "호출중");
-    setCustomers((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, status: "호출중" as const } : c)),
-    );
-  };
-
-  const handleAdmit = async (id: string) => {
-    await updateStatus(id, "입장완료");
-    setCustomers((prev) =>
-      prev.map((c) =>
-        c.id === id ? { ...c, status: "입장완료" as const } : c,
-      ),
-    );
-  };
-
-  const handleCancel = async (id: string) => {
-    await updateStatus(id, "취소");
-    setCustomers((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, status: "취소" as const } : c)),
-    );
-  };
+  const handleCall = (id: string) => statusMutation.mutate({ id, status: "호출중" });
+  const handleAdmit = (id: string) => statusMutation.mutate({ id, status: "입장완료" });
+  const handleCancel = (id: string) => statusMutation.mutate({ id, status: "취소" });
 
   const maskPhone = (phone: string) =>
     phone.replace(/(\d{3})-(\d{4})-(\d{4})/, "$1-****-$3");

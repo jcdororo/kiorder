@@ -6,12 +6,26 @@ import { Users, Phone, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api";
+import { useMutation } from "@tanstack/react-query";
 
 export default function Page() {
   const router = useRouter();
   const [partySize, setPartySize] = useState<number>(0);
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const submitMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiFetch("/waiting", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: phoneNumber, partySize }),
+      });
+      if (!res.ok) throw new Error();
+      return res.json() as Promise<{ id: string }>;
+    },
+    onSuccess: (data) => router.push(`/kiosk/complete?id=${data.id}`),
+    onError: () => toast.error("웨이팅 등록에 실패했습니다."),
+  });
 
   const handleNumberInput = (num: string) => {
     if (phoneNumber.length < 11) {
@@ -23,26 +37,12 @@ export default function Page() {
     setPhoneNumber(phoneNumber.slice(0, -1));
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!partySize || phoneNumber.length !== 11) {
       toast.error("인원수와 전화번호를 확인하세요.");
       return;
     }
-    setIsSubmitting(true);
-    try {
-      const res = await apiFetch("/waiting", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: phoneNumber, partySize }),
-      });
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      router.push(`/kiosk/complete?id=${data.id}`);
-    } catch {
-      toast.error("웨이팅 등록에 실패했습니다.");
-    } finally {
-      setIsSubmitting(false);
-    }
+    submitMutation.mutate();
   };
 
   const formatPhoneNumber = (phone: string) => {
@@ -136,7 +136,7 @@ export default function Page() {
                   }}
                   disabled={
                     key === "완료" &&
-                    (!partySize || phoneNumber.length !== 11 || isSubmitting)
+                    (!partySize || phoneNumber.length !== 11 || submitMutation.isPending)
                   }
                   className={`h-16 rounded-xl text-lg font-medium transition-all cursor-pointer ${
                     key === "완료"

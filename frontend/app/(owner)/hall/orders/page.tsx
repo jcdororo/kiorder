@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, PlusCircle } from "lucide-react";
 import { BackendOrder, HallOrder } from "@/types/types";
 import { supabase } from "@/lib/supabase";
 import { apiFetch } from "@/lib/api";
 import OrderCard from "@/components/hall/OrderCard";
+import { useQuery, useMutation } from "@tanstack/react-query";
 
 const STATUS_LIST: HallOrder["status"][] = ["접수됨", "조리중", "완료"];
 
@@ -18,16 +19,24 @@ const COLUMN_BADGE: Record<HallOrder["status"], string> = {
 
 export default function Page() {
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
-  const [orders, setOrders] = useState<HallOrder[]>([]);
-  const [loadingId, setLoadingId] = useState<string | null>(null);
-  const [storeId, setStoreId] = useState<string | null>(null);
 
-  const fetchOrders = useCallback(async () => {
-    const res = await apiFetch("/orders");
-    if (!res.ok) return;
-    const data = await res.json();
-    setOrders(
-      data.map((o: BackendOrder) => ({
+  const { data: storeData } = useQuery<{ id: string; name: string } | null>({
+    queryKey: ["store", "my"],
+    queryFn: async () => {
+      const res = await apiFetch("/stores/my");
+      const text = await res.text();
+      return text ? JSON.parse(text) : null;
+    },
+  });
+  const storeId = storeData?.id ?? null;
+
+  const { data: orders = [], refetch: refetchOrders } = useQuery<HallOrder[]>({
+    queryKey: ["hall-orders"],
+    queryFn: async () => {
+      const res = await apiFetch("/orders");
+      if (!res.ok) return [];
+      const data: BackendOrder[] = await res.json();
+      return data.map((o) => ({
         id: o.id,
         tableNumber: o.table.number,
         orderNumber: `#${o.id.slice(-6).toUpperCase()}`,
@@ -41,24 +50,14 @@ export default function Page() {
         receivedAt: o.createdAt,
         startedAt: o.startedAt ?? undefined,
         completedAt: o.completedAt ?? undefined,
-      })),
-    );
-  }, []);
+      }));
+    },
+  });
 
   useEffect(() => {
-    apiFetch("/stores/my").then(async (res) => {
-      if (res.ok) {
-        const store = await res.json();
-        setStoreId(store.id);
-      }
-    });
-  }, []);
-
-  useEffect(() => {
-    void (async () => { await fetchOrders(); })();
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
-  }, [fetchOrders]);
+  }, []);
 
   useEffect(() => {
     if (!storeId) return;
@@ -67,34 +66,33 @@ export default function Page() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "Order", filter: `storeId=eq.${storeId}` },
-        () => { fetchOrders(); },
+        () => { void refetchOrders(); },
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [storeId, fetchOrders]);
+  }, [storeId, refetchOrders]);
 
-  const handleHallReceive = async (orderId: string, hallReceived: boolean) => {
-    await apiFetch(`/orders/${orderId}/hall-receive`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ hallReceived }),
-    });
-    await fetchOrders();
-  };
+  const hallReceiveMutation = useMutation({
+    mutationFn: async ({ orderId, hallReceived }: { orderId: string; hallReceived: boolean }) => {
+      await apiFetch(`/orders/${orderId}/hall-receive`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hallReceived }),
+      });
+    },
+    onSuccess: () => { void refetchOrders(); },
+  });
 
-  const handleStatusChange = async (
-    orderId: string,
-    newStatus: HallOrder["status"],
-  ) => {
-    setLoadingId(orderId);
-    await apiFetch(`/orders/${orderId}/status`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: newStatus }),
-    });
-    await fetchOrders();
-    setLoadingId(null);
-  };
+  const statusMutation = useMutation({
+    mutationFn: async ({ orderId, newStatus }: { orderId: string; newStatus: HallOrder["status"] }) => {
+      await apiFetch(`/orders/${orderId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+    },
+    onSuccess: () => { void refetchOrders(); },
+  });
 
   const ordersByStatus = {
     접수됨: orders.filter((o) => o.status === "접수됨"),
@@ -153,9 +151,9 @@ export default function Page() {
                     order={order}
                     status={status}
                     currentTime={currentTime}
-                    isLoading={loadingId === order.id}
-                    onStatusChange={handleStatusChange}
-                    onHallReceive={handleHallReceive}
+                    isLoading={statusMutation.isPending && statusMutation.variables?.orderId === order.id}
+                    onStatusChange={(orderId, newStatus) => statusMutation.mutate({ orderId, newStatus })}
+                    onHallReceive={(orderId, hallReceived) => hallReceiveMutation.mutate({ orderId, hallReceived })}
                   />
                 ))}
                 {ordersByStatus[status].length === 0 && (

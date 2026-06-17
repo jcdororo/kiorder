@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -55,6 +55,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const menuSchema = z.object({
   name: z.string().min(1, "메뉴명을 입력해주세요."),
@@ -81,6 +82,7 @@ const TYPE_COLOR: Record<string, string> = {
 
 export default function Page() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [selectedCategory, setSelectedCategory] = useState("전체");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<AdminMenuItem | null>(null);
@@ -97,42 +99,66 @@ export default function Page() {
     },
   });
 
-  const [menuItems, setMenuItems] = useState<AdminMenuItem[]>([]);
-
   const categories = ["전체", "메인", "사이드", "음료", "주류", "직원호출"];
 
-  useEffect(() => {
-    apiFetch("/menu")
-      .then((res) => res.json())
-      .then((data) => setMenuItems(data))
-      .catch(() => toast.error("메뉴를 불러오지 못했습니다."));
-  }, []);
+  const { data: menuItems = [] } = useQuery<AdminMenuItem[]>({
+    queryKey: ["menu"],
+    queryFn: async () => {
+      const res = await apiFetch("/menu");
+      if (!res.ok) throw new Error();
+      return res.json();
+    },
+    throwOnError: () => {
+      toast.error("메뉴를 불러오지 못했습니다.");
+      return false;
+    },
+  });
 
   const filteredItems =
     selectedCategory === "전체"
       ? menuItems
       : menuItems.filter((item) => item.category === selectedCategory);
 
-  const toggleAvailability = async (id: string) => {
-    const item = menuItems.find((i) => i.id === id)!;
-    const res = await apiFetch(`/menu/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ available: !item.available }),
-    });
-    if (!res.ok) return toast.error("상태 변경에 실패했습니다.");
-    setMenuItems(
-      menuItems.map((i) =>
-        i.id === id ? { ...i, available: !i.available } : i,
-      ),
-    );
-  };
+  const toggleMutation = useMutation({
+    mutationFn: async ({ id, available }: { id: string; available: boolean }) => {
+      const res = await apiFetch(`/menu/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ available }),
+      });
+      if (!res.ok) throw new Error("상태 변경에 실패했습니다.");
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["menu"] }),
+    onError: (error: Error) => toast.error(error.message),
+  });
 
-  const handleDelete = async (id: string) => {
-    const res = await apiFetch(`/menu/${id}`, { method: "DELETE" });
-    if (!res.ok) return toast.error("삭제에 실패했습니다.");
-    setMenuItems(menuItems.filter((item) => item.id !== id));
-  };
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiFetch(`/menu/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("삭제에 실패했습니다.");
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["menu"] }),
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: async ({ data, id }: { data: MenuFormValues; id?: string }) => {
+      const res = await apiFetch(id ? `/menu/${id}` : "/menu", {
+        method: id ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("저장에 실패했습니다.");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["menu"] });
+      setIsAddDialogOpen(false);
+      setEditingItem(null);
+      form.reset();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
 
   const handleEdit = (item: AdminMenuItem) => {
     setEditingItem(item);
@@ -147,32 +173,8 @@ export default function Page() {
     setIsAddDialogOpen(true);
   };
 
-  const onSubmit = async (data: MenuFormValues): Promise<void> => {
-    const path = `/menu${editingItem ? `/${editingItem.id}` : ""}`;
-    const method = editingItem ? "PATCH" : "POST";
-    console.log("path", path);
-
-    const res = await apiFetch(path, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) {
-      toast.error("저장에 실패했습니다.");
-      return;
-    }
-
-    const saved = await res.json();
-    if (editingItem) {
-      setMenuItems(
-        menuItems.map((item) => (item.id === editingItem.id ? saved : item)),
-      );
-    } else {
-      setMenuItems([...menuItems, saved]);
-    }
-    setIsAddDialogOpen(false);
-    setEditingItem(null);
-    form.reset();
+  const onSubmit = (data: MenuFormValues) => {
+    saveMutation.mutate({ data, id: editingItem?.id });
   };
 
   const openAddDialog = () => {
@@ -331,6 +333,7 @@ export default function Page() {
               </Button>
               <Button
                 type="submit"
+                disabled={saveMutation.isPending}
                 className="bg-orange-500 hover:bg-orange-600 text-white"
               >
                 {editingItem ? "수정" : "저장"}
@@ -470,7 +473,9 @@ export default function Page() {
                   <div className="flex items-center gap-1.5">
                     <Switch
                       checked={item.available}
-                      onCheckedChange={() => toggleAvailability(item.id)}
+                      onCheckedChange={() =>
+                        toggleMutation.mutate({ id: item.id, available: !item.available })
+                      }
                     />
                     <span
                       className={`text-xs ${item.available ? "text-green-400" : "text-gray-500"}`}
@@ -493,7 +498,7 @@ export default function Page() {
                   size="icon"
                   variant="ghost"
                   className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                  onClick={() => handleDelete(item.id)}
+                  onClick={() => deleteMutation.mutate(item.id)}
                 >
                   <Trash2 className="w-4 h-4" />
                 </Button>
@@ -549,7 +554,9 @@ export default function Page() {
                     <div className="flex items-center gap-2">
                       <Switch
                         checked={item.available}
-                        onCheckedChange={() => toggleAvailability(item.id)}
+                        onCheckedChange={() =>
+                          toggleMutation.mutate({ id: item.id, available: !item.available })
+                        }
                       />
                       <span
                         className={`text-sm ${item.available ? "text-green-400" : "text-gray-500"}`}
@@ -572,7 +579,7 @@ export default function Page() {
                         size="icon"
                         variant="ghost"
                         className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                        onClick={() => handleDelete(item.id)}
+                        onClick={() => deleteMutation.mutate(item.id)}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>

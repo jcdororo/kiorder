@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { BackendOrder, KitchenOrder } from "@/types/types";
 import { supabase } from "@/lib/supabase";
 import { apiFetch } from "@/lib/api";
 import OrderCard from "@/components/kitchen/OrderCard";
+import { useQuery, useMutation } from "@tanstack/react-query";
 
 const STATUS_LIST: KitchenOrder["status"][] = ["접수됨", "조리중", "완료"];
 
@@ -18,16 +19,24 @@ const COLUMN_BADGE: Record<KitchenOrder["status"], string> = {
 
 export default function Page() {
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
-  const [orders, setOrders] = useState<KitchenOrder[]>([]);
-  const [loadingId, setLoadingId] = useState<string | null>(null);
-  const [storeId, setStoreId] = useState<string | null>(null);
 
-  const fetchOrders = useCallback(async () => {
-    const res = await apiFetch("/orders");
-    if (!res.ok) return;
-    const data = await res.json();
-    setOrders(
-      data.map((o: BackendOrder) => ({
+  const { data: storeData } = useQuery<{ id: string; name: string } | null>({
+    queryKey: ["store", "my"],
+    queryFn: async () => {
+      const res = await apiFetch("/stores/my");
+      const text = await res.text();
+      return text ? JSON.parse(text) : null;
+    },
+  });
+  const storeId = storeData?.id ?? null;
+
+  const { data: orders = [], refetch: refetchOrders } = useQuery<KitchenOrder[]>({
+    queryKey: ["kitchen-orders"],
+    queryFn: async () => {
+      const res = await apiFetch("/orders");
+      if (!res.ok) return [];
+      const data: BackendOrder[] = await res.json();
+      return data.map((o) => ({
         id: o.id,
         tableNumber: o.table.number,
         orderNumber: `#${o.id.slice(-6).toUpperCase()}`,
@@ -41,24 +50,14 @@ export default function Page() {
         receivedAt: o.createdAt,
         startedAt: o.startedAt ?? undefined,
         completedAt: o.completedAt ?? undefined,
-      })),
-    );
-  }, []);
+      }));
+    },
+  });
 
   useEffect(() => {
-    apiFetch("/stores/my").then(async (res) => {
-      if (res.ok) {
-        const store = await res.json();
-        setStoreId(store.id);
-      }
-    });
-  }, []);
-
-  useEffect(() => {
-    void (async () => { await fetchOrders(); })();
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
-  }, [fetchOrders]);
+  }, []);
 
   useEffect(() => {
     if (!storeId) return;
@@ -67,34 +66,33 @@ export default function Page() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "Order", filter: `storeId=eq.${storeId}` },
-        () => { fetchOrders(); },
+        () => { void refetchOrders(); },
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [storeId, fetchOrders]);
+  }, [storeId, refetchOrders]);
 
-  const handleHallReceive = async (orderId: string, hallReceived: boolean) => {
-    await apiFetch(`/orders/${orderId}/hall-receive`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ hallReceived }),
-    });
-    await fetchOrders();
-  };
+  const hallReceiveMutation = useMutation({
+    mutationFn: async ({ orderId, hallReceived }: { orderId: string; hallReceived: boolean }) => {
+      await apiFetch(`/orders/${orderId}/hall-receive`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hallReceived }),
+      });
+    },
+    onSuccess: () => { void refetchOrders(); },
+  });
 
-  const handleStatusChange = async (
-    orderId: string,
-    newStatus: KitchenOrder["status"],
-  ) => {
-    setLoadingId(orderId);
-    await apiFetch(`/orders/${orderId}/status`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: newStatus }),
-    });
-    await fetchOrders();
-    setLoadingId(null);
-  };
+  const statusMutation = useMutation({
+    mutationFn: async ({ orderId, newStatus }: { orderId: string; newStatus: KitchenOrder["status"] }) => {
+      await apiFetch(`/orders/${orderId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+    },
+    onSuccess: () => { void refetchOrders(); },
+  });
 
   const ordersByStatus = {
     접수됨: orders.filter((o) => o.status === "접수됨"),
@@ -108,16 +106,11 @@ export default function Page() {
       <div className="bg-[#1f2937] border-b border-white/10 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link
-              href="/"
-              className="text-gray-400 hover:text-white transition-colors"
-            >
+            <Link href="/" className="text-gray-400 hover:text-white transition-colors">
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <div>
-              <h1 className="text-xl font-bold text-white leading-none">
-                주방 화면
-              </h1>
+              <h1 className="text-xl font-bold text-white leading-none">주방 화면</h1>
               <p className="text-sm text-gray-400 mt-0.5">
                 {currentTime?.toLocaleTimeString("ko-KR") ?? ""}
               </p>
@@ -135,17 +128,13 @@ export default function Page() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {STATUS_LIST.map((status) => (
             <div key={status}>
-              {/* 컬럼 헤더 */}
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-base font-semibold text-white">{status}</h2>
-                <span
-                  className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${COLUMN_BADGE[status]}`}
-                >
+                <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${COLUMN_BADGE[status]}`}>
                   {ordersByStatus[status].length}
                 </span>
               </div>
 
-              {/* 카드 목록 */}
               <div className="space-y-3">
                 {ordersByStatus[status].map((order) => (
                   <OrderCard
@@ -153,9 +142,9 @@ export default function Page() {
                     order={order}
                     status={status}
                     currentTime={currentTime}
-                    isLoading={loadingId === order.id}
-                    onStatusChange={handleStatusChange}
-                    onHallReceive={handleHallReceive}
+                    isLoading={statusMutation.isPending && statusMutation.variables?.orderId === order.id}
+                    onStatusChange={(orderId, newStatus) => statusMutation.mutate({ orderId, newStatus })}
+                    onHallReceive={(orderId, hallReceived) => hallReceiveMutation.mutate({ orderId, hallReceived })}
                   />
                 ))}
                 {ordersByStatus[status].length === 0 && (

@@ -6,34 +6,60 @@ import { ArrowLeft, Plus, Minus, ShoppingCart, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 import { AdminMenuItem } from "@/types/types";
+import { useQuery, useMutation } from "@tanstack/react-query";
 
 type Table = { id: string; number: number };
 type CartItem = { id: string; name: string; price: number; quantity: number };
 
 export default function Page() {
   const router = useRouter();
-  const [tables, setTables] = useState<Table[]>([]);
   const [selectedTableId, setSelectedTableId] = useState("");
-  const [menus, setMenus] = useState<AdminMenuItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("전체");
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { data: tables = [] } = useQuery<Table[]>({
+    queryKey: ["tables"],
+    queryFn: async () => {
+      const res = await apiFetch("/tables");
+      if (!res.ok) throw new Error();
+      return res.json();
+    },
+  });
+
+  const { data: menus = [] } = useQuery<AdminMenuItem[]>({
+    queryKey: ["menu"],
+    queryFn: async () => {
+      const res = await apiFetch("/menu");
+      if (!res.ok) throw new Error();
+      return res.json();
+    },
+  });
 
   useEffect(() => {
-    const load = async () => {
-      const [tRes, mRes] = await Promise.all([
-        apiFetch("/tables"),
-        apiFetch("/menu"),
-      ]);
-      if (tRes.ok) {
-        const data: Table[] = await tRes.json();
-        setTables(data);
-        if (data.length > 0) setSelectedTableId(data[0].id);
-      }
-      if (mRes.ok) setMenus(await mRes.json());
-    };
-    void load();
-  }, []);
+    if (tables.length > 0) {
+      setSelectedTableId((prev) => prev || tables[0].id);
+    }
+  }, [tables]);
+
+  const submitMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiFetch("/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tableId: selectedTableId,
+          items: cart.map((i) => ({
+            menuItemId: i.id,
+            name: i.name,
+            price: i.price,
+            quantity: i.quantity,
+          })),
+        }),
+      });
+      if (!res.ok) throw new Error();
+    },
+    onSuccess: () => router.push("/hall/orders"),
+  });
 
   const categories = ["전체", ...Array.from(new Set(menus.map((m) => m.category)))];
   const filtered = menus.filter(
@@ -59,26 +85,6 @@ export default function Page() {
   };
 
   const totalAmount = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
-
-  const handleSubmit = async () => {
-    if (!selectedTableId || cart.length === 0) return;
-    setIsSubmitting(true);
-    const res = await apiFetch("/orders", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        tableId: selectedTableId,
-        items: cart.map((i) => ({
-          menuItemId: i.id,
-          name: i.name,
-          price: i.price,
-          quantity: i.quantity,
-        })),
-      }),
-    });
-    setIsSubmitting(false);
-    if (res.ok) router.push("/hall/orders");
-  };
 
   return (
     <div className="min-h-screen bg-[#111827] text-white flex flex-col">
@@ -198,11 +204,11 @@ export default function Page() {
               <span className="font-semibold text-white">{totalAmount.toLocaleString()}원</span>
             </div>
             <button
-              onClick={handleSubmit}
-              disabled={!selectedTableId || cart.length === 0 || isSubmitting}
+              onClick={() => submitMutation.mutate()}
+              disabled={!selectedTableId || cart.length === 0 || submitMutation.isPending}
               className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-white/10 disabled:text-gray-600 text-white font-semibold py-2.5 rounded-lg transition-colors text-sm"
             >
-              {isSubmitting ? "처리 중..." : "주문 완료"}
+              {submitMutation.isPending ? "처리 중..." : "주문 완료"}
             </button>
           </div>
         </div>

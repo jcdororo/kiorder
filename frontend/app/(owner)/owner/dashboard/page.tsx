@@ -21,9 +21,10 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { toast } from "sonner";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const mockDashboardStats = {
   todaySales: 457000,
@@ -92,37 +93,42 @@ const quickLinks = [
 
 export default function Page() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [storeName, setStoreName] = useState("");
-  const [myStore, setMyStore] = useState<{ id: string; name: string } | null>(
-    null,
-  );
 
-  useEffect(() => {
-    apiFetch("/stores/my")
-      .then(async (res) => {
-        const text = await res.text();
-        return text ? JSON.parse(text) : null;
-      })
-      .then((data) => {
-        if (data) setMyStore(data);
+  const { data: myStore } = useQuery<{ id: string; name: string } | null>({
+    queryKey: ["store", "my"],
+    queryFn: async () => {
+      const res = await apiFetch("/stores/my");
+      const text = await res.text();
+      return text ? JSON.parse(text) : null;
+    },
+  });
+
+  const createStoreMutation = useMutation({
+    mutationFn: async (name: string) => {
+      const res = await apiFetch("/stores", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
       });
-  }, []);
-
-  const handleCreateStore = async () => {
-    if (!storeName.trim()) return;
-    const res = await apiFetch("/stores", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: storeName }),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setMyStore(data);
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message ?? "매장 생성 실패");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["store", "my"] });
       toast.success("매장이 생성됐습니다.");
-    } else {
-      const err = await res.json();
-      toast.error(err.message ?? "매장 생성 실패");
-    }
+      setStoreName("");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const handleCreateStore = () => {
+    if (!storeName.trim()) return;
+    createStoreMutation.mutate(storeName);
   };
 
   const handleLogout = async () => {

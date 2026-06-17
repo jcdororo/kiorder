@@ -8,43 +8,36 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { UtensilsCrossed } from "lucide-react";
 import { apiFetch } from "@/lib/api";
+import { useMutation } from "@tanstack/react-query";
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
+  const loginMutation = useMutation({
+    mutationFn: async ({ email, password }: { email: string; password: string }) => {
       const res = await apiFetch("/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-
       if (!res.ok) {
         const data = await res.json();
-        toast.error(data.message || "로그인 실패");
-        return;
+        throw new Error(data.message || "로그인 실패");
       }
-
-      const data = await res.json();
+      return res.json() as Promise<{ role: string }>;
+    },
+    onSuccess: (data) => {
       localStorage.setItem("role", data.role);
+      router.push(data.role === "SYSTEM_ADMIN" ? "/system-admin/stores" : "/owner/dashboard");
+    },
+    onError: (error: Error) => toast.error(error.message || "서버 연결에 실패했습니다"),
+  });
 
-      if (data.role === "SYSTEM_ADMIN") {
-        router.push("/system-admin/stores");
-      } else {
-        router.push("/owner/dashboard");
-      }
-    } catch {
-      toast.error("서버 연결에 실패했습니다");
-    } finally {
-      setLoading(false);
-    }
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    loginMutation.mutate({ email, password });
   };
 
   return (
@@ -99,9 +92,9 @@ export default function LoginPage() {
           <Button
             type="submit"
             className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold h-11"
-            disabled={loading}
+            disabled={loginMutation.isPending}
           >
-            {loading ? "로그인 중..." : "로그인"}
+            {loginMutation.isPending ? "로그인 중..." : "로그인"}
           </Button>
         </form>
       </div>

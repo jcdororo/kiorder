@@ -1,9 +1,11 @@
 "use client";
-import { useState, useEffect, useCallback, useRef } from "react";
+
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { CreditCard, ArrowLeft, CheckCircle2, Trash2, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { apiFetch } from "@/lib/api";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 type Table = { id: string; number: number };
 type PosOrderItem = { name: string; price: number; quantity: number };
@@ -16,82 +18,76 @@ type PosOrder = {
 };
 
 export default function Page() {
-  const [tables, setTables] = useState<Table[]>([]);
-  const [allOrders, setAllOrders] = useState<PosOrder[]>([]);
-  const [tableOrders, setTableOrders] = useState<PosOrder[]>([]);
+  const queryClient = useQueryClient();
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [isPaying, setIsPaying] = useState(false);
   const selectedTableRef = useRef<Table | null>(null);
 
   useEffect(() => {
     selectedTableRef.current = selectedTable;
   }, [selectedTable]);
 
-  const fetchAllOrders = useCallback(async () => {
-    const res = await apiFetch("/orders");
-    if (res.ok) setAllOrders(await res.json());
-  }, []);
+  const { data: tables = [] } = useQuery<Table[]>({
+    queryKey: ["tables"],
+    queryFn: async () => {
+      const res = await apiFetch("/tables");
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
 
-  const fetchTableOrders = useCallback(async (tableId: string) => {
-    const res = await apiFetch(`/orders?tableId=${tableId}`);
-    if (res.ok) setTableOrders(await res.json());
-  }, []);
+  const { data: allOrders = [] } = useQuery<PosOrder[]>({
+    queryKey: ["pos-all-orders"],
+    queryFn: async () => {
+      const res = await apiFetch("/orders");
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
 
-  useEffect(() => {
-    const init = async () => {
-      const [tablesRes, ordersRes] = await Promise.all([
-        apiFetch("/tables"),
-        apiFetch("/orders"),
-      ]);
-      if (tablesRes.ok) setTables(await tablesRes.json());
-      if (ordersRes.ok) setAllOrders(await ordersRes.json());
-    };
-    init();
-  }, []);
-
-  useEffect(() => {
-    const run = async () => {
-      if (!selectedTable) { setTableOrders([]); return; }
-      const res = await apiFetch(`/orders?tableId=${selectedTable.id}`);
-      if (res.ok) setTableOrders(await res.json());
-    };
-    run();
-  }, [selectedTable]);
+  const { data: tableOrders = [] } = useQuery<PosOrder[]>({
+    queryKey: ["table-orders", selectedTable?.id],
+    queryFn: async () => {
+      const res = await apiFetch(`/orders?tableId=${selectedTable!.id}`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!selectedTable?.id,
+  });
 
   useEffect(() => {
     const channel = supabase
       .channel("pos-orders")
       .on("postgres_changes", { event: "*", schema: "public", table: "Order" }, () => {
-        fetchAllOrders();
-        const cur = selectedTableRef.current;
-        if (cur) fetchTableOrders(cur.id);
+        void queryClient.invalidateQueries({ queryKey: ["pos-all-orders"] });
+        if (selectedTableRef.current) {
+          void queryClient.invalidateQueries({ queryKey: ["table-orders", selectedTableRef.current.id] });
+        }
       })
       .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [fetchAllOrders, fetchTableOrders]);
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
 
-  const handlePayment = async () => {
-    if (isPaying || !tableOrders.length) return;
-    setIsPaying(true);
-    await Promise.all(
-      tableOrders.map((o) =>
-        apiFetch(`/orders/${o.id}/status`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: "결제완료" }),
-        }),
-      ),
-    );
-    setIsPaying(false);
-    setShowSuccess(true);
-    setTimeout(() => {
-      setShowSuccess(false);
-      setSelectedTable(null);
-    }, 2000);
-  };
+  const paymentMutation = useMutation({
+    mutationFn: async () => {
+      await Promise.all(
+        tableOrders.map((o) =>
+          apiFetch(`/orders/${o.id}/status`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: "결제완료" }),
+          }),
+        ),
+      );
+    },
+    onSuccess: () => {
+      setShowSuccess(true);
+      setTimeout(() => {
+        setShowSuccess(false);
+        setSelectedTable(null);
+      }, 2000);
+    },
+  });
 
   const totalAmount = tableOrders.reduce(
     (sum, o) => sum + o.orderItems.reduce((s, i) => s + i.price * i.quantity, 0),
@@ -249,11 +245,11 @@ export default function Page() {
                         테이블 정리
                       </button>
                       <button
-                        onClick={handlePayment}
-                        disabled={isPaying}
+                        onClick={() => paymentMutation.mutate()}
+                        disabled={paymentMutation.isPending}
                         className="py-3.5 bg-orange-500 hover:bg-[#ea580c] disabled:opacity-60 text-white rounded-xl flex items-center justify-center gap-2 text-sm font-semibold transition-colors"
                       >
-                        {isPaying ? (
+                        {paymentMutation.isPending ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
                           <CreditCard className="w-4 h-4" />

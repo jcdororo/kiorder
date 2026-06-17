@@ -2,33 +2,22 @@
 
 import { Skeleton } from "@/components/shared/Skeleton";
 import { apiFetch } from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 
 type Table = { id: string; number: number };
 
 export default function Tables() {
-  const [tables, setTables] = useState<Table[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: tables = [], isPending, isError } = useQuery<Table[]>({
+    queryKey: ["tables"],
+    queryFn: async () => {
+      const res = await apiFetch("/tables");
+      if (!res.ok) throw new Error("테이블 조회 실패");
+      return res.json();
+    },
+  });
 
-  useEffect(() => {
-    const fetchTables = async () => {
-      try {
-        const res = await apiFetch("/tables");
-        if (!res.ok) throw new Error("테이블 조회 실패");
-        const data = await res.json();
-        setTables(data);
-      } catch (e) {
-        setError("테이블을 불러오지 못했습니다.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchTables();
-  }, []);
-
-  if (isLoading) {
+  if (isPending) {
     return (
       <div className="grid grid-cols-4 gap-3">
         {Array.from({ length: 8 }).map((_, i) => (
@@ -37,8 +26,8 @@ export default function Tables() {
       </div>
     );
   }
-  if (error) {
-    return <p className="text-red-400 text-center py-4">{error}</p>;
+  if (isError) {
+    return <p className="text-red-400 text-center py-4">테이블을 불러오지 못했습니다.</p>;
   }
 
   return (
