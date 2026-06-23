@@ -118,8 +118,8 @@ export default function Page() {
   const router = useRouter();
 
   const handleLogout = async () => {
-    await apiFetch("/auth/logout", { method: "POST" });
-    router.push('/login');
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
   };
 
   const [stores, setStores] = useState<Stores[]>(mockStores);

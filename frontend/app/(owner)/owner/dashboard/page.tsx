@@ -132,7 +132,7 @@ export default function Page() {
   };
 
   const handleLogout = async () => {
-    await apiFetch("/auth/logout", { method: "POST" });
+    await fetch("/api/auth/logout", { method: "POST" });
     router.push("/login");
   };
 
