@@ -3,9 +3,11 @@
 > **테이블오더 + 키오스크 웨이팅을 하나의 플랫폼으로**  
 > 식당 사장님을 위한 올인원 SaaS — 주문, 웨이팅, 주방, 메뉴를 실시간으로 관리합니다.
 
-URL : https://kiorder.vercel.app/
+URL : https://kiorder.vercel.app/ 
+<br/>
 ID : owner1@test.com
-PW : test12344
+<br/>
+PW : test1234
 <br/>
 
 ![Next.js](https://img.shields.io/badge/Next.js_15-000000?style=flat-square&logo=next.js&logoColor=white)
