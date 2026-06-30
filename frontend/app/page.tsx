@@ -17,18 +17,7 @@ export default async function Page() {
       title: "키오스크 (손님용)",
       icon: Users,
       color: "bg-blue-500",
-      links: [
-        { name: "웨이팅 등록", path: "/kiosk/waiting" },
-      ],
-    },
-    {
-      title: "테이블오더 (손님용)",
-      icon: UtensilsCrossed,
-      color: "bg-orange-500",
-      links: [
-        { name: "테이블 선택", path: "/table-order" },
-        { name: "주문 내역 - 테이블 3", path: "/table-order/order-history" },
-      ],
+      links: [{ name: "웨이팅 등록", path: "/kiosk/waiting" }],
     },
     {
       title: "주방 (직원용)",
@@ -56,7 +45,7 @@ export default async function Page() {
         { name: "대시보드", path: "/owner/dashboard" },
         { name: "웨이팅 관리", path: "/owner/waiting" },
         { name: "메뉴 관리", path: "/owner/menu" },
-        { name: "테이블 레이아웃 설정", path: "/owner/table-settings" },
+        // { name: "테이블 레이아웃 설정", path: "/owner/table-settings" },
       ],
     },
     {
@@ -89,10 +78,15 @@ export default async function Page() {
             <div className="bg-orange-500 p-2.5 rounded-xl">
               <UtensilsCrossed className="w-6 h-6 text-white" />
             </div>
-            <span className="text-white text-2xl font-bold tracking-tight">맛있는 식당</span>
+            <span className="text-white text-2xl font-bold tracking-tight">
+              맛있는 식당
+            </span>
           </div>
           {email && (
-            <p className="text-zinc-400 text-sm">안녕하세요 <span className="text-white font-medium">{email}</span>님</p>
+            <p className="text-zinc-400 text-sm">
+              안녕하세요 <span className="text-white font-medium">{email}</span>
+              님
+            </p>
           )}
         </div>
 
@@ -109,7 +103,9 @@ export default async function Page() {
                   <div className={`${section.color} p-2.5 rounded-lg`}>
                     <Icon className="w-5 h-5 text-white" />
                   </div>
-                  <h3 className="m-0 text-white text-base font-semibold">{section.title}</h3>
+                  <h3 className="m-0 text-white text-base font-semibold">
+                    {section.title}
+                  </h3>
                 </div>
                 <div className="space-y-2">
                   {section.links.map((link) => (
@@ -127,7 +123,9 @@ export default async function Page() {
           })}
         </div>
 
-        <p className="text-white/20 text-xs text-center mt-12">© 2026 맛있는 식당. All rights reserved.</p>
+        <p className="text-white/20 text-xs text-center mt-12">
+          © 2026 맛있는 식당. All rights reserved.
+        </p>
       </div>
     </div>
   );

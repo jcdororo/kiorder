@@ -9,17 +9,16 @@ export default function KioskCompleteCountdown() {
 
   useEffect(() => {
     const tick = setInterval(() => {
-      setSeconds((prev) => {
-        if (prev <= 1) {
-          clearInterval(tick);
-          router.push("/kiosk/waiting");
-          return 0;
-        }
-        return prev - 1;
-      });
+      setSeconds((prev) => (prev <= 1 ? 0 : prev - 1));
     }, 1000);
     return () => clearInterval(tick);
-  }, [router]);
+  }, []);
+
+  useEffect(() => {
+    if (seconds === 0) {
+      router.push("/kiosk/waiting");
+    }
+  }, [seconds, router]);
 
   return (
     <button
