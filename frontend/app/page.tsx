@@ -20,6 +20,12 @@ export default async function Page() {
       links: [{ name: "웨이팅 등록", path: "/kiosk/waiting" }],
     },
     {
+      title: "테이블오더 (손님용)",
+      icon: UtensilsCrossed,
+      color: "bg-orange-500",
+      links: [{ name: "테이블 선택", path: "/table-order" }],
+    },
+    {
       title: "주방 (직원용)",
       icon: ChefHat,
       color: "bg-red-500",

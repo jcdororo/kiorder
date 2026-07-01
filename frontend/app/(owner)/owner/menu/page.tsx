@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +14,9 @@ import {
   UtensilsCrossed,
   PhoneCall,
   Home,
+  ImageIcon,
 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 import {
   Table,
   TableBody,
@@ -86,6 +88,24 @@ export default function Page() {
   const [selectedCategory, setSelectedCategory] = useState("전체");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<AdminMenuItem | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>("");
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const uploadImage = async (file: File): Promise<string> => {
+    const ext = file.name.split(".").pop();
+    const path = `${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from("menu-images").upload(path, file);
+    if (error) throw new Error("이미지 업로드에 실패했습니다.");
+    const { data } = supabase.storage.from("menu-images").getPublicUrl(path);
+    return data.publicUrl;
+  };
 
   const form = useForm<MenuFormValues>({
     resolver: zodResolver(menuSchema) as Resolver<MenuFormValues>,
@@ -99,8 +119,6 @@ export default function Page() {
     },
   });
 
-  const categories = ["전체", "메인", "사이드", "음료", "주류", "직원호출"];
-
   const { data: menuItems = [] } = useQuery<AdminMenuItem[]>({
     queryKey: ["menu"],
     queryFn: async () => {
@@ -113,6 +131,11 @@ export default function Page() {
       return false;
     },
   });
+
+  const categories = useMemo(
+    () => ["전체", ...new Set(menuItems.map((item) => item.category))],
+    [menuItems]
+  );
 
   const filteredItems =
     selectedCategory === "전체"
@@ -155,6 +178,8 @@ export default function Page() {
       queryClient.invalidateQueries({ queryKey: ["menu"] });
       setIsAddDialogOpen(false);
       setEditingItem(null);
+      setImageFile(null);
+      setImagePreview("");
       form.reset();
     },
     onError: (error: Error) => toast.error(error.message),
@@ -162,6 +187,8 @@ export default function Page() {
 
   const handleEdit = (item: AdminMenuItem) => {
     setEditingItem(item);
+    setImageFile(null);
+    setImagePreview(item.image ?? "");
     form.reset({
       name: item.name,
       category: item.category,
@@ -173,12 +200,18 @@ export default function Page() {
     setIsAddDialogOpen(true);
   };
 
-  const onSubmit = (data: MenuFormValues) => {
-    saveMutation.mutate({ data, id: editingItem?.id });
+  const onSubmit = async (data: MenuFormValues) => {
+    let imageUrl = data.image;
+    if (imageFile) {
+      imageUrl = await uploadImage(imageFile);
+    }
+    saveMutation.mutate({ data: { ...data, image: imageUrl }, id: editingItem?.id });
   };
 
   const openAddDialog = () => {
     setEditingItem(null);
+    setImageFile(null);
+    setImagePreview("");
     form.reset({
       name: "",
       category: "메인",
@@ -240,20 +273,19 @@ export default function Page() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-gray-300">카테고리</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent className="bg-gray-800 border-gray-700 text-white">
-                      <SelectItem value="메인">메인</SelectItem>
-                      <SelectItem value="사이드">사이드</SelectItem>
-                      <SelectItem value="음료">음료</SelectItem>
-                      <SelectItem value="주류">주류</SelectItem>
-                      <SelectItem value="직원 호출">직원 호출</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <Input
+                      placeholder="예: 한우, 음료, 사이드"
+                      className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
+                      list="category-suggestions"
+                      {...field}
+                    />
+                  </FormControl>
+                  <datalist id="category-suggestions">
+                    {categories.filter((c) => c !== "전체").map((c) => (
+                      <option key={c} value={c} />
+                    ))}
+                  </datalist>
                   <FormMessage />
                 </FormItem>
               )}
@@ -321,6 +353,46 @@ export default function Page() {
                 </FormItem>
               )}
             />
+
+            {/* 이미지 업로드 */}
+            <div className="space-y-2">
+              <label className="text-sm text-gray-300">이미지</label>
+              <div className="flex items-center gap-3">
+                {imagePreview ? (
+                  <img
+                    src={imagePreview}
+                    alt="preview"
+                    className="w-16 h-16 object-cover rounded-lg border border-gray-700"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-lg border border-dashed border-gray-600 flex items-center justify-center">
+                    <ImageIcon className="w-6 h-6 text-gray-600" />
+                  </div>
+                )}
+                <div className="flex flex-col gap-1.5">
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*,.svg"
+                      className="hidden"
+                      onChange={handleImageChange}
+                    />
+                    <span className="px-3 py-1.5 text-sm bg-gray-800 border border-gray-700 rounded-md text-gray-300 hover:bg-gray-700 cursor-pointer">
+                      {imagePreview ? "이미지 변경" : "이미지 선택"}
+                    </span>
+                  </label>
+                  {imagePreview && (
+                    <button
+                      type="button"
+                      onClick={() => { setImageFile(null); setImagePreview(""); form.setValue("image", ""); }}
+                      className="text-xs text-red-400 hover:text-red-300 text-left"
+                    >
+                      이미지 제거
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
 
             <DialogFooter>
               <Button
