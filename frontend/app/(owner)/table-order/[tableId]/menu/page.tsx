@@ -2,7 +2,14 @@
 
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useParams } from "next/navigation";
-import { ShoppingCart, Plus, Minus, Bell, CheckCircle, Receipt } from "lucide-react";
+import {
+  ShoppingCart,
+  Plus,
+  Minus,
+  Bell,
+  CheckCircle,
+  Receipt,
+} from "lucide-react";
 import { CartItem, MenuItem } from "@/types/types";
 import { apiFetch } from "@/lib/api";
 import Image from "next/image";
@@ -16,7 +23,6 @@ type TableOrder = {
   createdAt: string;
   orderItems: { name: string; price: number; quantity: number }[];
 };
-
 
 export default function Page() {
   const { tableId } = useParams<{ tableId: string }>();
@@ -33,7 +39,9 @@ export default function Page() {
   const mainRef = useRef<HTMLElement>(null);
   const isScrollingRef = useRef(false);
 
-  const { data: tableOrders = [], refetch: refetchOrders } = useQuery<TableOrder[]>({
+  const { data: tableOrders = [], refetch: refetchOrders } = useQuery<
+    TableOrder[]
+  >({
     queryKey: ["table-orders", tableId],
     queryFn: async () => {
       const res = await apiFetch(`/orders?tableId=${tableId}`);
@@ -53,33 +61,51 @@ export default function Page() {
   const tableNumber = allTables.find((t) => t.id === tableId)?.number ?? "-";
 
   const receiptItems = useMemo(() => {
-    const map = new Map<string, { name: string; price: number; quantity: number }>();
+    const map = new Map<
+      string,
+      { name: string; price: number; quantity: number }
+    >();
     tableOrders.forEach((order) => {
       order.orderItems.forEach((item) => {
         const existing = map.get(item.name);
         if (existing) {
           existing.quantity += item.quantity;
         } else {
-          map.set(item.name, { name: item.name, price: item.price, quantity: item.quantity });
+          map.set(item.name, {
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+          });
         }
       });
     });
     return Array.from(map.values());
   }, [tableOrders]);
 
-  const grandTotal = receiptItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
-  const receiptTime = tableOrders.length > 0
-    ? new Date(tableOrders[0].createdAt).toLocaleString("ko-KR", {
-        year: "numeric", month: "2-digit", day: "2-digit",
-        hour: "2-digit", minute: "2-digit",
-      })
-    : null;
+  const grandTotal = receiptItems.reduce(
+    (sum, i) => sum + i.price * i.quantity,
+    0,
+  );
+  const receiptTime =
+    tableOrders.length > 0
+      ? new Date(tableOrders[0].createdAt).toLocaleString("ko-KR", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : null;
 
   useEffect(() => {
     if (!showOrderModal) return;
     const interval = setInterval(() => {
       setCountdown((prev) => {
-        if (prev <= 1) { clearInterval(interval); setShowOrderModal(false); return 0; }
+        if (prev <= 1) {
+          clearInterval(interval);
+          setShowOrderModal(false);
+          return 0;
+        }
         return prev - 1;
       });
     }, 1000);
@@ -96,10 +122,16 @@ export default function Page() {
 
   const { categories, grouped } = useMemo(() => {
     const orderMenus = menus.filter((m) => m.available && m.type !== "SERVICE");
-    const cats = ["전체", ...Array.from(new Set(orderMenus.map((m) => m.category)))];
+    const cats = [
+      "전체",
+      ...Array.from(new Set(orderMenus.map((m) => m.category))),
+    ];
     const grp = cats
       .filter((c) => c !== "전체")
-      .map((cat) => ({ category: cat, items: orderMenus.filter((m) => m.category === cat) }))
+      .map((cat) => ({
+        category: cat,
+        items: orderMenus.filter((m) => m.category === cat),
+      }))
       .filter((g) => g.items.length > 0);
     return { categories: cats, grouped: grp };
   }, [menus]);
@@ -107,12 +139,18 @@ export default function Page() {
   const scrollToCategory = (category: string) => {
     setActiveCategory(category);
     isScrollingRef.current = true;
-    setTimeout(() => { isScrollingRef.current = false; }, 600);
+    setTimeout(() => {
+      isScrollingRef.current = false;
+    }, 600);
     if (category === "전체") {
-      document.getElementById("menu-top")?.scrollIntoView({ behavior: "smooth" });
+      document
+        .getElementById("menu-top")
+        ?.scrollIntoView({ behavior: "smooth" });
       return;
     }
-    document.getElementById(`cat-${category}`)?.scrollIntoView({ behavior: "smooth" });
+    document
+      .getElementById(`cat-${category}`)
+      ?.scrollIntoView({ behavior: "smooth" });
   };
 
   const addToCart = (menu: MenuItem) => {
@@ -122,7 +160,16 @@ export default function Page() {
         return prev.map((item) =>
           item.id === menu.id ? { ...item, quantity: item.quantity + 1 } : item,
         );
-      return [...prev, { id: menu.id, name: menu.name, price: menu.price, quantity: 1, image: menu.image }];
+      return [
+        ...prev,
+        {
+          id: menu.id,
+          name: menu.name,
+          price: menu.price,
+          quantity: 1,
+          image: menu.image,
+        },
+      ];
     });
   };
 
@@ -147,7 +194,12 @@ export default function Page() {
   const submitServiceOrder = async () => {
     const items = serviceMenus
       .filter((m) => (serviceCart[m.id] ?? 0) > 0)
-      .map((m) => ({ menuItemId: m.id, name: m.name, price: m.price, quantity: serviceCart[m.id] }));
+      .map((m) => ({
+        menuItemId: m.id,
+        name: m.name,
+        price: m.price,
+        quantity: serviceCart[m.id],
+      }));
     if (items.length === 0) return;
     setIsServiceSubmitting(true);
     try {
@@ -173,11 +225,11 @@ export default function Page() {
         const visible = entries.filter((e) => e.isIntersecting);
         if (visible.length === 0) return;
         const top = visible.reduce((a, b) =>
-          a.boundingClientRect.top < b.boundingClientRect.top ? a : b
+          a.boundingClientRect.top < b.boundingClientRect.top ? a : b,
         );
         setActiveCategory(top.target.id.replace("cat-", ""));
       },
-      { root: mainRef.current, rootMargin: "-10% 0px -80% 0px", threshold: 0 }
+      { root: mainRef.current, rootMargin: "-10% 0px -80% 0px", threshold: 0 },
     );
 
     grouped.forEach(({ category }) => {
@@ -188,7 +240,10 @@ export default function Page() {
     return () => observer.disconnect();
   }, [grouped]);
 
-  const totalAmount = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const totalAmount = cart.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0,
+  );
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
@@ -245,7 +300,10 @@ export default function Page() {
           </aside>
 
           {/* 메뉴 콘텐츠 */}
-          <main ref={mainRef} className="flex-1 overflow-y-auto px-6 py-4 pb-8 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          <main
+            ref={mainRef}
+            className="flex-1 overflow-y-auto px-6 py-4 pb-8 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+          >
             <div id="menu-top" />
             {grouped.map(({ category, items }) => (
               <section key={category} id={`cat-${category}`} className="mb-10">
@@ -258,16 +316,25 @@ export default function Page() {
                       key={menu.id}
                       className="bg-[#1f2937] rounded-xl overflow-hidden border border-white/10 hover:border-orange-500/50 transition-all"
                     >
-                      <div className="aspect-square bg-[#374151] flex items-center justify-center overflow-hidden">
+                      <div className="relative aspect-square bg-[#374151] flex items-center justify-center overflow-hidden">
                         {menu.image ? (
-                          <img src={menu.image} alt={menu.name} className="w-full h-full object-cover" />
+                          <Image
+                            src={menu.image}
+                            alt={menu.name}
+                            fill
+                            className="object-cover"
+                          />
                         ) : (
                           <span className="text-4xl">🍽️</span>
                         )}
                       </div>
                       <div className="p-3">
-                        <p className="font-medium text-white text-sm line-clamp-1">{menu.name}</p>
-                        <p className="text-orange-400 text-sm mt-1">{menu.price.toLocaleString()}원</p>
+                        <p className="font-medium text-white text-sm line-clamp-1">
+                          {menu.name}
+                        </p>
+                        <p className="text-orange-400 text-sm mt-1">
+                          {menu.price.toLocaleString()}원
+                        </p>
                         <button
                           onClick={() => addToCart(menu)}
                           className="mt-2 w-full py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm flex items-center justify-center gap-1 transition-colors"
@@ -289,15 +356,21 @@ export default function Page() {
               <button
                 onClick={() => setCartView("cart")}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  cartView === "cart" ? "bg-orange-500 text-white" : "bg-white/5 text-gray-400 hover:text-white"
+                  cartView === "cart"
+                    ? "bg-orange-500 text-white"
+                    : "bg-white/5 text-gray-400 hover:text-white"
                 }`}
               >
                 <ShoppingCart className="w-3.5 h-3.5" />
                 장바구니
                 {totalItems > 0 && (
-                  <span className={`text-[10px] rounded-full w-4 h-4 flex items-center justify-center leading-none ${
-                    cartView === "cart" ? "bg-white/25" : "bg-orange-500 text-white"
-                  }`}>
+                  <span
+                    className={`text-[10px] rounded-full w-4 h-4 flex items-center justify-center leading-none ${
+                      cartView === "cart"
+                        ? "bg-white/25"
+                        : "bg-orange-500 text-white"
+                    }`}
+                  >
                     {totalItems}
                   </span>
                 )}
@@ -305,15 +378,21 @@ export default function Page() {
               <button
                 onClick={() => setCartView("receipt")}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  cartView === "receipt" ? "bg-orange-500 text-white" : "bg-white/5 text-gray-400 hover:text-white"
+                  cartView === "receipt"
+                    ? "bg-orange-500 text-white"
+                    : "bg-white/5 text-gray-400 hover:text-white"
                 }`}
               >
                 <Receipt className="w-3.5 h-3.5" />
                 주문 내역
                 {tableOrders.length > 0 && (
-                  <span className={`text-[10px] rounded-full w-4 h-4 flex items-center justify-center leading-none ${
-                    cartView === "receipt" ? "bg-white/25" : "bg-orange-500 text-white"
-                  }`}>
+                  <span
+                    className={`text-[10px] rounded-full w-4 h-4 flex items-center justify-center leading-none ${
+                      cartView === "receipt"
+                        ? "bg-white/25"
+                        : "bg-orange-500 text-white"
+                    }`}
+                  >
                     {tableOrders.length}
                   </span>
                 )}
@@ -325,27 +404,46 @@ export default function Page() {
               <>
                 <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 [&::-webkit-scrollbar]:hidden">
                   {cart.length === 0 ? (
-                    <p className="text-gray-400 text-center mt-10 text-sm">담긴 메뉴가 없습니다</p>
+                    <p className="text-gray-400 text-center mt-10 text-sm">
+                      담긴 메뉴가 없습니다
+                    </p>
                   ) : (
                     cart.map((item) => (
-                      <div key={item.id} className="flex items-center justify-between gap-2">
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between gap-2"
+                      >
                         <div className="flex items-center gap-2 min-w-0">
-                          {item.image ? (
+                          {/* {item.image ? (
                             <Image src={item.image} alt={item.name} width={40} height={40} className="w-10 h-10 rounded-lg object-cover shrink-0" />
                           ) : (
                             <div className="w-10 h-10 rounded-lg bg-[#374151] flex items-center justify-center shrink-0">🍽️</div>
-                          )}
+                          )} */}
                           <div className="min-w-0">
-                            <p className="text-sm font-medium text-white truncate">{item.name}</p>
-                            <p className="text-xs text-gray-400">{item.price.toLocaleString()}원</p>
+                            <p className="text-sm font-medium text-white truncate">
+                              {item.name}
+                            </p>
+                            <p className="text-xs text-gray-400">
+                              {item.price.toLocaleString()}원
+                            </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-1.5 shrink-0">
-                          <button onClick={() => removeFromCart(item.id)} className="w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center">
+                          <button
+                            onClick={() => removeFromCart(item.id)}
+                            className="w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center"
+                          >
                             <Minus className="w-3 h-3" />
                           </button>
-                          <span className="w-4 text-center text-sm">{item.quantity}</span>
-                          <button onClick={() => addToCart(menus.find((m) => m.id === item.id)!)} className="w-6 h-6 rounded-full bg-orange-500 hover:bg-orange-600 flex items-center justify-center">
+                          <span className="w-4 text-center text-sm">
+                            {item.quantity}
+                          </span>
+                          <button
+                            onClick={() =>
+                              addToCart(menus.find((m) => m.id === item.id)!)
+                            }
+                            className="w-6 h-6 rounded-full bg-orange-500 hover:bg-orange-600 flex items-center justify-center"
+                          >
                             <Plus className="w-3 h-3" />
                           </button>
                         </div>
@@ -355,8 +453,12 @@ export default function Page() {
                 </div>
                 <div className="px-6 py-5 border-t border-white/10">
                   <div className="flex justify-between items-center mb-4">
-                    <span className="text-gray-400 text-sm">총 {totalItems}개</span>
-                    <span className="text-white font-bold text-lg">{totalAmount.toLocaleString()}원</span>
+                    <span className="text-gray-400 text-sm">
+                      총 {totalItems}개
+                    </span>
+                    <span className="text-white font-bold text-lg">
+                      {totalAmount.toLocaleString()}원
+                    </span>
                   </div>
                   <button
                     disabled={cart.length === 0}
@@ -366,7 +468,12 @@ export default function Page() {
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
                           tableId,
-                          items: cart.map((item) => ({ menuItemId: item.id, name: item.name, price: item.price, quantity: item.quantity })),
+                          items: cart.map((item) => ({
+                            menuItemId: item.id,
+                            name: item.name,
+                            price: item.price,
+                            quantity: item.quantity,
+                          })),
                         }),
                       });
                       setCart([]);
@@ -393,9 +500,17 @@ export default function Page() {
                 ) : (
                   <div className="bg-[#111827] rounded-xl border border-white/10 overflow-hidden">
                     <div className="text-center px-4 pt-5 pb-4 border-b border-dashed border-white/20">
-                      <p className="text-gray-500 text-[10px] tracking-[0.3em] mb-2">영 수 증</p>
-                      <p className="text-white text-lg font-bold">테이블 {tableNumber}번</p>
-                      {receiptTime && <p className="text-gray-500 text-[10px] mt-1">{receiptTime}</p>}
+                      <p className="text-gray-500 text-[10px] tracking-[0.3em] mb-2">
+                        영 수 증
+                      </p>
+                      <p className="text-white text-lg font-bold">
+                        테이블 {tableNumber}번
+                      </p>
+                      {receiptTime && (
+                        <p className="text-gray-500 text-[10px] mt-1">
+                          {receiptTime}
+                        </p>
+                      )}
                     </div>
                     <div className="px-4 py-3 border-b border-dashed border-white/20 space-y-2">
                       <div className="flex justify-between text-[10px] text-gray-600 pb-2 border-b border-white/10">
@@ -403,10 +518,17 @@ export default function Page() {
                         <span>금액</span>
                       </div>
                       {receiptItems.map((item, i) => (
-                        <div key={i} className="flex justify-between items-baseline text-xs">
+                        <div
+                          key={i}
+                          className="flex justify-between items-baseline text-xs"
+                        >
                           <div className="flex items-baseline gap-1 min-w-0 mr-2">
-                            <span className="text-white truncate">{item.name}</span>
-                            <span className="text-gray-500 shrink-0">×{item.quantity}</span>
+                            <span className="text-white truncate">
+                              {item.name}
+                            </span>
+                            <span className="text-gray-500 shrink-0">
+                              ×{item.quantity}
+                            </span>
                           </div>
                           <span className="text-orange-400 tabular-nums shrink-0">
                             {(item.price * item.quantity).toLocaleString()}원
@@ -415,13 +537,17 @@ export default function Page() {
                       ))}
                     </div>
                     <div className="px-4 py-4 flex justify-between items-center">
-                      <span className="text-white font-bold text-xs tracking-widest">합  계</span>
+                      <span className="text-white font-bold text-xs tracking-widest">
+                        합 계
+                      </span>
                       <span className="text-orange-400 text-base font-bold tabular-nums">
                         {grandTotal.toLocaleString()}원
                       </span>
                     </div>
                     <div className="text-center py-3 border-t border-dashed border-white/20">
-                      <p className="text-gray-600 text-[10px] tracking-[0.2em]">감사합니다</p>
+                      <p className="text-gray-600 text-[10px] tracking-[0.2em]">
+                        감사합니다
+                      </p>
                     </div>
                   </div>
                 )}
@@ -457,8 +583,12 @@ export default function Page() {
                             : "bg-[#1f2937] border-white/10"
                         }`}
                       >
-                        <Bell className={`w-7 h-7 ${qty > 0 ? "text-orange-400" : "text-gray-500"}`} />
-                        <span className="text-sm font-semibold text-white text-center">{menu.name}</span>
+                        <Bell
+                          className={`w-7 h-7 ${qty > 0 ? "text-orange-400" : "text-gray-500"}`}
+                        />
+                        <span className="text-sm font-semibold text-white text-center">
+                          {menu.name}
+                        </span>
                         <div className="flex items-center gap-4">
                           <button
                             onClick={() => updateServiceQty(menu.id, -1)}
@@ -467,7 +597,9 @@ export default function Page() {
                           >
                             <Minus className="w-4 h-4" />
                           </button>
-                          <span className="text-lg font-bold text-white w-6 text-center">{qty}</span>
+                          <span className="text-lg font-bold text-white w-6 text-center">
+                            {qty}
+                          </span>
                           <button
                             onClick={() => updateServiceQty(menu.id, 1)}
                             className="w-8 h-8 rounded-full bg-orange-500 hover:bg-orange-600 flex items-center justify-center transition-colors"
@@ -485,7 +617,11 @@ export default function Page() {
               <div className="shrink-0 px-6 py-4 border-t border-white/10 bg-[#111827]">
                 <button
                   onClick={submitServiceOrder}
-                  disabled={isServiceSubmitting || Object.values(serviceCart).every((q) => q === 0) || serviceOrdered}
+                  disabled={
+                    isServiceSubmitting ||
+                    Object.values(serviceCart).every((q) => q === 0) ||
+                    serviceOrdered
+                  }
                   className={`w-full py-3.5 rounded-xl font-semibold text-sm transition-colors flex items-center justify-center gap-2 ${
                     serviceOrdered
                       ? "bg-green-500/20 text-green-400 border border-green-500/30"
@@ -493,11 +629,15 @@ export default function Page() {
                   }`}
                 >
                   {serviceOrdered ? (
-                    <><CheckCircle className="w-4 h-4" /> 요청 완료!</>
+                    <>
+                      <CheckCircle className="w-4 h-4" /> 요청 완료!
+                    </>
                   ) : isServiceSubmitting ? (
                     "처리 중..."
                   ) : (
-                    <><Bell className="w-4 h-4" /> 주문</>
+                    <>
+                      <Bell className="w-4 h-4" /> 주문
+                    </>
                   )}
                 </button>
               </div>
@@ -511,8 +651,12 @@ export default function Page() {
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center">
           <div className="bg-[#1f2937] border border-white/10 rounded-2xl px-10 py-10 flex flex-col items-center gap-4 shadow-2xl">
             <CheckCircle className="w-16 h-16 text-green-400" />
-            <p className="text-white text-xl font-bold">주문이 완료되었습니다!</p>
-            <p className="text-gray-400 text-sm">{countdown}초 후 자동으로 닫힙니다</p>
+            <p className="text-white text-xl font-bold">
+              주문이 완료되었습니다!
+            </p>
+            <p className="text-gray-400 text-sm">
+              {countdown}초 후 자동으로 닫힙니다
+            </p>
             <div className="flex gap-3 mt-2">
               <button
                 onClick={() => setShowOrderModal(false)}
@@ -521,7 +665,10 @@ export default function Page() {
                 닫기
               </button>
               <button
-                onClick={() => { setShowOrderModal(false); setCartView("receipt"); }}
+                onClick={() => {
+                  setShowOrderModal(false);
+                  setCartView("receipt");
+                }}
                 className="px-6 py-2 bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 rounded-xl text-sm transition-colors flex items-center gap-1.5"
               >
                 <Receipt className="w-3.5 h-3.5" />
@@ -531,7 +678,6 @@ export default function Page() {
           </div>
         </div>
       )}
-
     </div>
   );
 }

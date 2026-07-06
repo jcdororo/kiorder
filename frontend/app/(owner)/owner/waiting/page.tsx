@@ -101,7 +101,7 @@ export default function Page() {
 
   const stats = {
     waiting: customers.filter((c) => c.status === "대기중").length,
-    totalToday: 45,
+    totalToday: customers.filter((c) => c.status === "입장완료").length,
     avgWaitTime: 23,
     cancelled: customers.filter((c) => c.status === "취소").length,
   };

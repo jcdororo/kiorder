@@ -4,3 +4,6 @@ node_modules
 .DS_Store
 .mcp.json
 backend/dist/
+docs/*
+!docs/images/
+구상.txt
