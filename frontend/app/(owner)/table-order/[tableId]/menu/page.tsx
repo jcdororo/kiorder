@@ -26,7 +26,6 @@ type TableOrder = {
 
 export default function Page() {
   const { tableId } = useParams<{ tableId: string }>();
-  const [menus, setMenus] = useState<MenuItem[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [activeCategory, setActiveCategory] = useState("전체");
   const [activeTab, setActiveTab] = useState<Tab>("menu");
@@ -59,6 +58,15 @@ export default function Page() {
     },
   });
   const tableNumber = allTables.find((t) => t.id === tableId)?.number ?? "-";
+
+  const { data: menus = [] } = useQuery<MenuItem[]>({
+    queryKey: ["menu"],
+    queryFn: async () => {
+      const res = await apiFetch("/menu");
+      if (!res.ok) throw new Error(`메뉴 로딩 실패: ${res.status}`);
+      return res.json();
+    },
+  });
 
   const receiptItems = useMemo(() => {
     const map = new Map<
@@ -111,12 +119,6 @@ export default function Page() {
     }, 1000);
     return () => clearInterval(interval);
   }, [showOrderModal]);
-
-  useEffect(() => {
-    apiFetch("/menu")
-      .then((res) => res.json())
-      .then((data) => setMenus(data));
-  }, []);
 
   const serviceMenus = menus.filter((m) => m.available && m.type === "SERVICE");
 
