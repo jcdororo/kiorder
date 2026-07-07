@@ -71,14 +71,13 @@
 - `Order.hallReceived` 마이그레이션 + `PATCH /orders/:id/hall-receive` 엔드포인트
 - Supabase Realtime storeId 필터 적용 (매장별 이벤트 격리)
 - 홀 완료 버튼 validation (hallReceived 없으면 비활성)
+- 배포 로그인/로그아웃 후 페이지 이동 안 되는 버그 해결 (router.push → window.location.href, 커밋 `4d3125e`)
 
 ### 다음 할 일 (우선순위 순)
 
 #### P1 — 포트폴리오 완성
-- **배포 환경 로그인/로그아웃 후 페이지 이동 안 되는 문제 해결** ← 다음 작업
-  - 증상: 배포(Vercel/Render) 환경에서 로그인·로그아웃 후 목적 페이지로 redirect 안 됨
-  - 확인 포인트: `app/api/auth/login|logout/route.ts` Set-Cookie 전달, `proxy.ts` role redirect, SameSite=None/Secure 쿠키 반영 타이밍
-- **POS 화면 구현** (A안 — 고정 그리드 플로어맵) ← 다음 작업
+- **커스텀 훅 나머지 2개** (CEO 로드맵 Week 1) — `useOwnerMenu()`, `usePosOrders()` ← 다음 작업
+- **POS 화면 구현** (A안 — 고정 그리드 플로어맵)
   - 백엔드: `GET /orders`에 tableId 필터 + `결제완료` 상태 추가
   - 프론트: 다크 테마 + 실제 API 연동 + Supabase Realtime
   - 결제 버튼 → PATCH 결제완료 → 테이블 비워짐

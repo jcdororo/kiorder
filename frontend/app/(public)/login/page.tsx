@@ -13,7 +13,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
 
   const loginMutation = useMutation({
-    mutationFn: async ({ email, password }: { email: string; password: string }) => {
+    mutationFn: async ({
+      email,
+      password,
+    }: {
+      email: string;
+      password: string;
+    }) => {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -29,9 +35,13 @@ export default function LoginPage() {
       localStorage.setItem("role", data.role);
       // 쿠키 세팅 직후엔 hard navigation으로 이동 — soft nav(router.push)는 프록시가
       // 갱신 전 쿠키 상태를 보고 튕겨서 배포 환경(SameSite=None)에서 이동이 안 됨
-      window.location.href = data.role === "SYSTEM_ADMIN" ? "/system-admin/stores" : "/owner/dashboard";
+      window.location.href =
+        data.role === "SYSTEM_ADMIN"
+          ? "/system-admin/stores"
+          : "/owner/dashboard";
     },
-    onError: (error: Error) => toast.error(error.message || "서버 연결에 실패했습니다"),
+    onError: (error: Error) =>
+      toast.error(error.message || "서버 연결에 실패했습니다"),
   });
 
   const handleLogin = (e: React.FormEvent) => {
@@ -53,9 +63,6 @@ export default function LoginPage() {
         </div>
 
         <h1 className="text-3xl font-bold text-white mb-1">로그인</h1>
-        <p className="text-zinc-400 text-sm mb-8">
-          관리자 계정으로 로그인하세요
-        </p>
 
         <form onSubmit={handleLogin} className="space-y-5">
           <div className="space-y-1.5">
