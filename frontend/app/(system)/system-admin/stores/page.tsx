@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   Store,
   Users,
@@ -115,11 +114,11 @@ const mockStores: Stores[] = [
 ];
 
 export default function Page() {
-  const router = useRouter();
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/login");
+    // 쿠키 삭제 직후 hard navigation — soft nav는 프록시가 옛 쿠키를 보고 이동 실패
+    window.location.href = "/login";
   };
 
   const [stores, setStores] = useState<Stores[]>(mockStores);

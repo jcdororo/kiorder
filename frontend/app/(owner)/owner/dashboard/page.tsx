@@ -20,7 +20,6 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { toast } from "sonner";
@@ -92,7 +91,6 @@ const quickLinks = [
 ];
 
 export default function Page() {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const [storeName, setStoreName] = useState("");
 
@@ -133,7 +131,8 @@ export default function Page() {
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/login");
+    // 쿠키 삭제 직후 hard navigation — soft nav는 프록시가 옛 쿠키를 보고 이동 실패
+    window.location.href = "/login";
   };
 
   const stats = mockDashboardStats;

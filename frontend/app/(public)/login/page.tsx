@@ -1,17 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { UtensilsCrossed } from "lucide-react";
-import { apiFetch } from "@/lib/api";
 import { useMutation } from "@tanstack/react-query";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -30,7 +27,9 @@ export default function LoginPage() {
     },
     onSuccess: (data) => {
       localStorage.setItem("role", data.role);
-      router.push(data.role === "SYSTEM_ADMIN" ? "/system-admin/stores" : "/owner/dashboard");
+      // 쿠키 세팅 직후엔 hard navigation으로 이동 — soft nav(router.push)는 프록시가
+      // 갱신 전 쿠키 상태를 보고 튕겨서 배포 환경(SameSite=None)에서 이동이 안 됨
+      window.location.href = data.role === "SYSTEM_ADMIN" ? "/system-admin/stores" : "/owner/dashboard";
     },
     onError: (error: Error) => toast.error(error.message || "서버 연결에 실패했습니다"),
   });
