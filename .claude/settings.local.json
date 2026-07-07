@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "mcp__TalkToFigma__join_channel"
+      "mcp__TalkToFigma__join_channel",
+      "Bash(git merge *)",
+      "Bash(git pull *)"
     ]
   }
 }

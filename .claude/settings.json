@@ -7,7 +7,14 @@
       "mcp__TalkToFigma__create_text",
       "mcp__TalkToFigma__set_corner_radius",
       "mcp__TalkToFigma__move_node",
-      "Bash(curl -s -X POST http://localhost:3001/auth/register -H \"Content-Type: application/json\" -d '{\"email\":\"owner@test.com\",\"password\":\"test1234\"}')"
+      "Bash(curl -s -X POST http://localhost:3001/auth/register -H \"Content-Type: application/json\" -d '{\"email\":\"owner@test.com\",\"password\":\"test1234\"}')",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(git checkout *)",
+      "Bash(gh pr create --title 'docs: add project README' --body ' *)",
+      "Bash(npx prisma *)",
+      "Bash(git commit *)"
     ],
     "additionalDirectories": [
       "C:\\Users\\wnwlc\\.claude"
