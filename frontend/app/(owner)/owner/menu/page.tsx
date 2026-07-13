@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -44,8 +44,6 @@ import {
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
 import { useRouter } from "next/navigation";
 import { AdminMenuItem } from "@/types/types";
-import { toast } from "sonner";
-import { apiFetch } from "@/lib/api";
 import { useForm, Resolver } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -57,7 +55,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useOwnerMenu } from "@/hooks/useOwnerMenu";
 
 const menuSchema = z.object({
   name: z.string().min(1, "메뉴명을 입력해주세요."),
@@ -84,7 +82,6 @@ const TYPE_COLOR: Record<string, string> = {
 
 export default function Page() {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const [selectedCategory, setSelectedCategory] = useState("전체");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<AdminMenuItem | null>(null);
@@ -101,7 +98,9 @@ export default function Page() {
   const uploadImage = async (file: File): Promise<string> => {
     const ext = file.name.split(".").pop();
     const path = `${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("menu-images").upload(path, file);
+    const { error } = await supabase.storage
+      .from("menu-images")
+      .upload(path, file);
     if (error) throw new Error("이미지 업로드에 실패했습니다.");
     const { data } = supabase.storage.from("menu-images").getPublicUrl(path);
     return data.publicUrl;
@@ -119,71 +118,21 @@ export default function Page() {
     },
   });
 
-  const { data: menuItems = [] } = useQuery<AdminMenuItem[]>({
-    queryKey: ["menu"],
-    queryFn: async () => {
-      const res = await apiFetch("/menu");
-      if (!res.ok) throw new Error();
-      return res.json();
-    },
-    throwOnError: () => {
-      toast.error("메뉴를 불러오지 못했습니다.");
-      return false;
-    },
-  });
-
-  const categories = useMemo(
-    () => ["전체", ...new Set(menuItems.map((item) => item.category))],
-    [menuItems]
-  );
+  const { menuItems, categories, toggleMutation, deleteMutation, saveMutation } =
+    useOwnerMenu({
+      onSaved: () => {
+        setIsAddDialogOpen(false);
+        setEditingItem(null);
+        setImageFile(null);
+        setImagePreview("");
+        form.reset();
+      },
+    });
 
   const filteredItems =
     selectedCategory === "전체"
       ? menuItems
       : menuItems.filter((item) => item.category === selectedCategory);
-
-  const toggleMutation = useMutation({
-    mutationFn: async ({ id, available }: { id: string; available: boolean }) => {
-      const res = await apiFetch(`/menu/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ available }),
-      });
-      if (!res.ok) throw new Error("상태 변경에 실패했습니다.");
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["menu"] }),
-    onError: (error: Error) => toast.error(error.message),
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const res = await apiFetch(`/menu/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("삭제에 실패했습니다.");
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["menu"] }),
-    onError: (error: Error) => toast.error(error.message),
-  });
-
-  const saveMutation = useMutation({
-    mutationFn: async ({ data, id }: { data: MenuFormValues; id?: string }) => {
-      const res = await apiFetch(id ? `/menu/${id}` : "/menu", {
-        method: id ? "PATCH" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) throw new Error("저장에 실패했습니다.");
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["menu"] });
-      setIsAddDialogOpen(false);
-      setEditingItem(null);
-      setImageFile(null);
-      setImagePreview("");
-      form.reset();
-    },
-    onError: (error: Error) => toast.error(error.message),
-  });
 
   const handleEdit = (item: AdminMenuItem) => {
     setEditingItem(item);
@@ -205,7 +154,10 @@ export default function Page() {
     if (imageFile) {
       imageUrl = await uploadImage(imageFile);
     }
-    saveMutation.mutate({ data: { ...data, image: imageUrl }, id: editingItem?.id });
+    saveMutation.mutate({
+      data: { ...data, image: imageUrl },
+      id: editingItem?.id,
+    });
   };
 
   const openAddDialog = () => {
@@ -282,9 +234,11 @@ export default function Page() {
                     />
                   </FormControl>
                   <datalist id="category-suggestions">
-                    {categories.filter((c) => c !== "전체").map((c) => (
-                      <option key={c} value={c} />
-                    ))}
+                    {categories
+                      .filter((c) => c !== "전체")
+                      .map((c) => (
+                        <option key={c} value={c} />
+                      ))}
                   </datalist>
                   <FormMessage />
                 </FormItem>
@@ -384,7 +338,11 @@ export default function Page() {
                   {imagePreview && (
                     <button
                       type="button"
-                      onClick={() => { setImageFile(null); setImagePreview(""); form.setValue("image", ""); }}
+                      onClick={() => {
+                        setImageFile(null);
+                        setImagePreview("");
+                        form.setValue("image", "");
+                      }}
                       className="text-xs text-red-400 hover:text-red-300 text-left"
                     >
                       이미지 제거
@@ -546,7 +504,10 @@ export default function Page() {
                     <Switch
                       checked={item.available}
                       onCheckedChange={() =>
-                        toggleMutation.mutate({ id: item.id, available: !item.available })
+                        toggleMutation.mutate({
+                          id: item.id,
+                          available: !item.available,
+                        })
                       }
                     />
                     <span
@@ -627,7 +588,10 @@ export default function Page() {
                       <Switch
                         checked={item.available}
                         onCheckedChange={() =>
-                          toggleMutation.mutate({ id: item.id, available: !item.available })
+                          toggleMutation.mutate({
+                            id: item.id,
+                            available: !item.available,
+                          })
                         }
                       />
                       <span
