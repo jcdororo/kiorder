@@ -28,7 +28,7 @@
 
 **포트폴리오 프로젝트 — 맛있는 식당 (테이블오더 + 키오스크 웨이팅)**
 
-- `frontend/` — Next.js 15 App Router
+- `frontend/` — Next.js 16 App Router
 - `backend/` — NestJS + Prisma 7 + Supabase (PostgreSQL)
 - Route Group: `(public)` / `(system)` / `(owner)`
 - 인증: HttpOnly 쿠키 + jose jwtVerify (proxy.ts)

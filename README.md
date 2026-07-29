@@ -10,7 +10,7 @@ ID : owner1@test.com
 PW : test1234
 <br/>
 
-![Next.js](https://img.shields.io/badge/Next.js_15-000000?style=flat-square&logo=next.js&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js_16-000000?style=flat-square&logo=next.js&logoColor=white)
 ![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=flat-square&logo=nestjs&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
 ![Prisma](https://img.shields.io/badge/Prisma_7-2D3748?style=flat-square&logo=prisma&logoColor=white)
@@ -112,7 +112,7 @@ PW : test1234
 ### Frontend
 | 기술 | 역할 |
 |------|------|
-| **Next.js 15** (App Router) | SSR/CSR 혼합, Route Group으로 역할별 레이아웃 분리 |
+| **Next.js 16** (App Router) | SSR/CSR 혼합, Route Group으로 역할별 레이아웃 분리 |
 | **TypeScript** | 전 레이어 타입 안전성 확보 |
 | **Tailwind CSS** + **shadcn/ui** | 다크 모던 UI 시스템 |
 | **Supabase Realtime** | WebSocket 기반 DB 변경 구독 |
@@ -215,7 +215,7 @@ JWT_SECRET=           # 백엔드와 동일값 (proxy.ts jwtVerify용)
 
 ```
 kiorder/
-├── frontend/                     # Next.js 15 App Router
+├── frontend/                     # Next.js 16 App Router
 │   ├── app/
 │   │   ├── (public)/             # 인증 불필요 (로그인, 대기현황)
 │   │   ├── (owner)/              # 사장님 전용 (kiosk, kitchen, pos, owner/*)
