@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
-import { AdminMenuItem } from "@/types/types";
+import { AdminMenuItem } from "@/types/menu";
 import { MenuTypeBadge } from "./MenuTypeBadge";
 
 export function MenuCard({

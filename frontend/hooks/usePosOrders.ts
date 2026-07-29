@@ -2,16 +2,7 @@ import { useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { apiFetch } from "@/lib/api";
-
-export type Table = { id: string; number: number };
-export type PosOrderItem = { name: string; price: number; quantity: number };
-export type PosOrder = {
-  id: string;
-  tableId: string;
-  status: string;
-  createdAt: string;
-  orderItems: PosOrderItem[];
-};
+import { Table, PosOrder } from "@/types/order";
 
 export function usePosOrders(
   selectedTable: Table | null,

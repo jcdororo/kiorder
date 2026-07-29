@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { MenuItemType } from "@/types/types";
+import { MenuItemType } from "@/types/menu";
 
 const TYPE_LABEL: Record<MenuItemType, string> = {
   FOOD: "주방",

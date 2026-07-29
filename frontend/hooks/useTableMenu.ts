@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
-import { MenuItem } from "@/types/types";
+import { MenuItem } from "@/types/menu";
 
 export type TableOrder = {
   id: string;

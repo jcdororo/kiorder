@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { CreditCard, ArrowLeft, CheckCircle2, Trash2, Loader2 } from "lucide-react";
-import { usePosOrders, Table } from "@/hooks/usePosOrders";
+import { usePosOrders } from "@/hooks/usePosOrders";
+import { Table } from "@/types/order";
 
 export default function Page() {
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);

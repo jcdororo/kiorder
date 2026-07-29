@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, PlusCircle } from "lucide-react";
-import { BackendOrder, HallOrder } from "@/types/types";
+import { BackendOrder, HallOrder } from "@/types/order";
 import { supabase } from "@/lib/supabase";
 import { apiFetch } from "@/lib/api";
 import OrderCard from "@/components/hall/OrderCard";

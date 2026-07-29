@@ -1,7 +1,7 @@
 "use client";
 
 import { Clock, Loader2 } from "lucide-react";
-import { HallOrder } from "@/types/types";
+import { HallOrder } from "@/types/order";
 
 const STATUS_LIST: HallOrder["status"][] = ["접수됨", "조리중", "완료"];
 

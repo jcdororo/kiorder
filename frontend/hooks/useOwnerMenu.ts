@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api";
-import { AdminMenuItem, MenuItemType } from "@/types/types";
+import { AdminMenuItem, MenuItemType } from "@/types/menu";
 
 export type MenuPayload = {
   name: string;

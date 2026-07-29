@@ -10,7 +10,8 @@ import {
   CheckCircle,
   Receipt,
 } from "lucide-react";
-import { CartItem, MenuItem } from "@/types/types";
+import { MenuItem } from "@/types/menu";
+import { CartItem } from "@/types/order";
 import { apiFetch } from "@/lib/api";
 import Image from "next/image";
 import { useTableMenu } from "@/hooks/useTableMenu";

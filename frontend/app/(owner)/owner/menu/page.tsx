@@ -43,7 +43,7 @@ import {
 } from "@/components/ui/select";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
 import { useRouter } from "next/navigation";
-import { AdminMenuItem } from "@/types/types";
+import { AdminMenuItem } from "@/types/menu";
 import { useForm, Resolver } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";

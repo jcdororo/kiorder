@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Plus, Minus, ShoppingCart, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
-import { AdminMenuItem } from "@/types/types";
+import { AdminMenuItem } from "@/types/menu";
 import { useQuery, useMutation } from "@tanstack/react-query";
 
 type Table = { id: string; number: number };

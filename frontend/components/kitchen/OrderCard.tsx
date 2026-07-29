@@ -1,7 +1,7 @@
 "use client";
 
 import { Clock, Loader2 } from "lucide-react";
-import { KitchenOrder } from "@/types/types";
+import { KitchenOrder } from "@/types/order";
 
 const STATUS_LIST: KitchenOrder["status"][] = ["접수됨", "조리중", "완료"];
 

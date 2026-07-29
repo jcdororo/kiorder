@@ -43,7 +43,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api";
-import { Stores } from "@/types/types";
+import { Stores } from "@/types/store";
 
 const mockStores: Stores[] = [
   {

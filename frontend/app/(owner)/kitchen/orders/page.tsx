@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { BackendOrder, KitchenOrder } from "@/types/types";
+import { BackendOrder, KitchenOrder } from "@/types/order";
 import { supabase } from "@/lib/supabase";
 import { apiFetch } from "@/lib/api";
 import OrderCard from "@/components/kitchen/OrderCard";

@@ -22,7 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useRouter } from "next/navigation";
-import { WaitingCustomer } from "@/types/types";
+import { WaitingCustomer } from "@/types/waiting";
 import { supabase } from "@/lib/supabase";
 import { apiFetch } from "@/lib/api";
 import { useQuery, useMutation } from "@tanstack/react-query";
