@@ -56,6 +56,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useOwnerMenu } from "@/hooks/useOwnerMenu";
+import { MenuCard } from "@/components/owner/MenuCard";
+import { MenuTypeBadge } from "@/components/owner/MenuTypeBadge";
 
 const menuSchema = z.object({
   name: z.string().min(1, "메뉴명을 입력해주세요."),
@@ -67,18 +69,6 @@ const menuSchema = z.object({
 });
 
 type MenuFormValues = z.infer<typeof menuSchema>;
-
-const TYPE_LABEL: Record<string, string> = {
-  FOOD: "주방",
-  DRINK: "음료",
-  SERVICE: "직원호출",
-};
-
-const TYPE_COLOR: Record<string, string> = {
-  FOOD: "bg-orange-500/20 text-orange-300 border-orange-500/30",
-  DRINK: "bg-blue-500/20 text-blue-300 border-blue-500/30",
-  SERVICE: "bg-purple-500/20 text-purple-300 border-purple-500/30",
-};
 
 export default function Page() {
   const router = useRouter();
@@ -473,70 +463,15 @@ export default function Page() {
             <p className="text-center text-gray-600 py-12">메뉴가 없어요</p>
           )}
           {filteredItems.map((item) => (
-            <div
+            <MenuCard
               key={item.id}
-              className="bg-gray-900 rounded-xl border border-white/10 p-4 flex items-center gap-3"
-            >
-              <ImageWithFallback
-                src={item.image}
-                alt={item.name}
-                className="w-12 h-12 object-cover rounded-lg shrink-0"
-              />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <span className="text-white font-medium truncate">
-                    {item.name}
-                  </span>
-                  <Badge className="bg-white/10 text-gray-300 border-white/20 shrink-0">
-                    {item.category}
-                  </Badge>
-                  <Badge
-                    className={`shrink-0 ${TYPE_COLOR[item.type] ?? TYPE_COLOR.FOOD}`}
-                  >
-                    {TYPE_LABEL[item.type] ?? TYPE_LABEL.FOOD}
-                  </Badge>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-gray-400 text-sm">
-                    {item.price.toLocaleString()}원
-                  </span>
-                  <div className="flex items-center gap-1.5">
-                    <Switch
-                      checked={item.available}
-                      onCheckedChange={() =>
-                        toggleMutation.mutate({
-                          id: item.id,
-                          available: !item.available,
-                        })
-                      }
-                    />
-                    <span
-                      className={`text-xs ${item.available ? "text-green-400" : "text-gray-500"}`}
-                    >
-                      {item.available ? "판매중" : "품절"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-1 shrink-0">
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="text-gray-400 hover:text-white hover:bg-white/10"
-                  onClick={() => handleEdit(item)}
-                >
-                  <Pencil className="w-4 h-4" />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                  onClick={() => deleteMutation.mutate(item.id)}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
+              item={item}
+              onEdit={handleEdit}
+              onToggle={(it) =>
+                toggleMutation.mutate({ id: it.id, available: !it.available })
+              }
+              onDelete={(id) => deleteMutation.mutate(id)}
+            />
           ))}
         </div>
 
@@ -576,9 +511,7 @@ export default function Page() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge className={TYPE_COLOR[item.type] ?? TYPE_COLOR.FOOD}>
-                      {TYPE_LABEL[item.type] ?? TYPE_LABEL.FOOD}
-                    </Badge>
+                    <MenuTypeBadge type={item.type} />
                   </TableCell>
                   <TableCell className="text-gray-400">
                     {item.price.toLocaleString()}원
