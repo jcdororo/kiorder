@@ -7,9 +7,11 @@ import { MenuModule } from './menu/menu.module';
 import { OrderModule } from './order/order.module';
 import { TableModule } from './table/table.module';
 import { WaitingEntryModule } from './waiting-entry/waiting-entry.module';
+import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
   imports: [
+    PrismaModule,
     AuthModule,
     StoreModule,
     MenuModule,
