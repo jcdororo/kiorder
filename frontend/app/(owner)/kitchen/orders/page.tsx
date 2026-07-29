@@ -7,15 +7,10 @@ import { BackendOrder, KitchenOrder } from "@/types/types";
 import { supabase } from "@/lib/supabase";
 import { apiFetch } from "@/lib/api";
 import OrderCard from "@/components/kitchen/OrderCard";
+import { OrderStatusBadge } from "@/components/owner/OrderStatusBadge";
 import { useQuery, useMutation } from "@tanstack/react-query";
 
 const STATUS_LIST: KitchenOrder["status"][] = ["접수됨", "조리중", "완료"];
-
-const COLUMN_BADGE: Record<KitchenOrder["status"], string> = {
-  접수됨: "bg-white/10 text-gray-300 border border-white/20",
-  조리중: "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30",
-  완료: "bg-green-500/20 text-green-400 border border-green-500/30",
-};
 
 export default function Page() {
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
@@ -130,9 +125,9 @@ export default function Page() {
             <div key={status}>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-base font-semibold text-white">{status}</h2>
-                <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${COLUMN_BADGE[status]}`}>
+                <OrderStatusBadge status={status}>
                   {ordersByStatus[status].length}
-                </span>
+                </OrderStatusBadge>
               </div>
 
               <div className="space-y-3">

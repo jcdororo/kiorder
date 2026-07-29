@@ -1,3 +1,5 @@
+import { OrderStatus } from "./order";
+
 export interface MenuItem {
   id: string;
   name: string;
@@ -39,7 +41,7 @@ export interface KitchenOrder {
   id: string;
   tableNumber: number;
   orderNumber: string;
-  status: "접수됨" | "조리중" | "완료";
+  status: OrderStatus;
   items: { name: string; quantity: number; needsKitchen: boolean }[];
   hallReceived: boolean;
   receivedAt: string;
@@ -114,7 +116,7 @@ export interface HallOrder {
   id: string;
   tableNumber: number;
   orderNumber: string;
-  status: "접수됨" | "조리중" | "완료";
+  status: OrderStatus;
   items: { name: string; quantity: number; type: string }[];
   hallReceived: boolean;
   receivedAt: string;
