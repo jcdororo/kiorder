@@ -1,101 +1,24 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { CreditCard, ArrowLeft, CheckCircle2, Trash2, Loader2 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
-import { apiFetch } from "@/lib/api";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-
-type Table = { id: string; number: number };
-type PosOrderItem = { name: string; price: number; quantity: number };
-type PosOrder = {
-  id: string;
-  tableId: string;
-  status: string;
-  createdAt: string;
-  orderItems: PosOrderItem[];
-};
+import { usePosOrders, Table } from "@/hooks/usePosOrders";
 
 export default function Page() {
-  const queryClient = useQueryClient();
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
-  const selectedTableRef = useRef<Table | null>(null);
 
-  useEffect(() => {
-    selectedTableRef.current = selectedTable;
-  }, [selectedTable]);
-
-  const { data: tables = [] } = useQuery<Table[]>({
-    queryKey: ["tables"],
-    queryFn: async () => {
-      const res = await apiFetch("/tables");
-      if (!res.ok) return [];
-      return res.json();
-    },
-  });
-
-  const { data: allOrders = [] } = useQuery<PosOrder[]>({
-    queryKey: ["pos-all-orders"],
-    queryFn: async () => {
-      const res = await apiFetch("/orders");
-      if (!res.ok) return [];
-      return res.json();
-    },
-  });
-
-  const { data: tableOrders = [] } = useQuery<PosOrder[]>({
-    queryKey: ["table-orders", selectedTable?.id],
-    queryFn: async () => {
-      const res = await apiFetch(`/orders?tableId=${selectedTable!.id}`);
-      if (!res.ok) return [];
-      return res.json();
-    },
-    enabled: !!selectedTable?.id,
-  });
-
-  useEffect(() => {
-    const channel = supabase
-      .channel("pos-orders")
-      .on("postgres_changes", { event: "*", schema: "public", table: "Order" }, () => {
-        void queryClient.invalidateQueries({ queryKey: ["pos-all-orders"] });
-        if (selectedTableRef.current) {
-          void queryClient.invalidateQueries({ queryKey: ["table-orders", selectedTableRef.current.id] });
-        }
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [queryClient]);
-
-  const paymentMutation = useMutation({
-    mutationFn: async () => {
-      await Promise.all(
-        tableOrders.map((o) =>
-          apiFetch(`/orders/${o.id}/status`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ status: "결제완료" }),
-          }),
-        ),
-      );
-    },
-    onSuccess: () => {
-      setShowSuccess(true);
-      setTimeout(() => {
-        setShowSuccess(false);
-        setSelectedTable(null);
-      }, 2000);
-    },
-  });
-
-  const totalAmount = tableOrders.reduce(
-    (sum, o) => sum + o.orderItems.reduce((s, i) => s + i.price * i.quantity, 0),
-    0,
-  );
-
-  const hasActiveOrders = (tableId: string) =>
-    allOrders.some((o) => o.tableId === tableId && o.status !== "결제완료");
+  const { tables, tableOrders, totalAmount, hasActiveOrders, paymentMutation } =
+    usePosOrders(selectedTable, {
+      onPaid: () => {
+        setShowSuccess(true);
+        setTimeout(() => {
+          setShowSuccess(false);
+          setSelectedTable(null);
+        }, 2000);
+      },
+    });
 
   if (showSuccess) {
     return (
