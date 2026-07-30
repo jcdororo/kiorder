@@ -16,11 +16,16 @@ export function usePosOrders(
     selectedTableRef.current = selectedTable;
   }, [selectedTable]);
 
-  const { data: tables = [] } = useQuery<Table[]>({
+  const {
+    data: tables = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery<Table[]>({
     queryKey: ["tables"],
     queryFn: async () => {
       const res = await apiFetch("/tables");
-      if (!res.ok) return [];
+      if (!res.ok) throw new Error(`테이블을 불러오지 못했습니다 (${res.status})`);
       return res.json();
     },
   });
@@ -84,5 +89,14 @@ export function usePosOrders(
   const hasActiveOrders = (tableId: string) =>
     allOrders.some((o) => o.tableId === tableId && o.status !== "결제완료");
 
-  return { tables, tableOrders, totalAmount, hasActiveOrders, paymentMutation };
+  return {
+    tables,
+    tableOrders,
+    totalAmount,
+    hasActiveOrders,
+    paymentMutation,
+    isLoading,
+    isError,
+    refetch,
+  };
 }

@@ -25,6 +25,8 @@ import { useRouter } from "next/navigation";
 import { WaitingCustomer } from "@/types/waiting";
 import { supabase } from "@/lib/supabase";
 import { apiFetch } from "@/lib/api";
+import { Skeleton } from "@/components/shared/Skeleton";
+import { ErrorState } from "@/components/shared/ErrorState";
 import { useQuery, useMutation } from "@tanstack/react-query";
 
 type WaitingRow = WaitingCustomer & { waitingTime: string };
@@ -44,10 +46,17 @@ const statusBadgeClass = (status: WaitingCustomer["status"]) => {
 export default function Page() {
   const router = useRouter();
 
-  const { data: customers = [], refetch } = useQuery<WaitingRow[]>({
+  const {
+    data: customers = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery<WaitingRow[]>({
     queryKey: ["waiting"],
     queryFn: async () => {
-      const data = await apiFetch("/waiting").then((r) => r.json());
+      const res = await apiFetch("/waiting");
+      if (!res.ok) throw new Error(`웨이팅 목록을 불러오지 못했습니다 (${res.status})`);
+      const data = await res.json();
       return data.map(
         (e: {
           id: string;
@@ -179,6 +188,23 @@ export default function Page() {
 
       {/* Main Content */}
       <div className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto">
+        {isLoading ? (
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-24" />
+              ))}
+            </div>
+            <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-20" />
+              ))}
+            </div>
+          </>
+        ) : isError ? (
+          <ErrorState onRetry={() => void refetch()} />
+        ) : (
+          <>
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
           <div className="bg-gray-800 rounded-xl p-4 md:p-5 border border-white/10">
@@ -449,6 +475,8 @@ export default function Page() {
             </Table>
           </div>
         </div>
+          </>
+        )}
       </div>
     </div>
   );

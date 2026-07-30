@@ -5,21 +5,31 @@ import Link from "next/link";
 import { CreditCard, ArrowLeft, CheckCircle2, Trash2, Loader2 } from "lucide-react";
 import { usePosOrders } from "@/hooks/usePosOrders";
 import { Table } from "@/types/order";
+import { Skeleton } from "@/components/shared/Skeleton";
+import { ErrorState } from "@/components/shared/ErrorState";
 
 export default function Page() {
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const { tables, tableOrders, totalAmount, hasActiveOrders, paymentMutation } =
-    usePosOrders(selectedTable, {
-      onPaid: () => {
-        setShowSuccess(true);
-        setTimeout(() => {
-          setShowSuccess(false);
-          setSelectedTable(null);
-        }, 2000);
-      },
-    });
+  const {
+    tables,
+    tableOrders,
+    totalAmount,
+    hasActiveOrders,
+    paymentMutation,
+    isLoading,
+    isError,
+    refetch,
+  } = usePosOrders(selectedTable, {
+    onPaid: () => {
+      setShowSuccess(true);
+      setTimeout(() => {
+        setShowSuccess(false);
+        setSelectedTable(null);
+      }, 2000);
+    },
+  });
 
   if (showSuccess) {
     return (
@@ -58,6 +68,26 @@ export default function Page() {
           </div>
         </div>
 
+        {isLoading ? (
+          <div className="grid lg:grid-cols-2 gap-6">
+            <div>
+              <Skeleton className="h-6 w-24 mb-4" />
+              <div className="bg-[#1f2937] rounded-xl border border-white/10 p-6">
+                <div className="grid grid-cols-5 gap-3">
+                  {Array.from({ length: 10 }).map((_, i) => (
+                    <Skeleton key={i} className="aspect-square" />
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div>
+              <Skeleton className="h-6 w-32 mb-4" />
+              <Skeleton className="h-64 w-full" />
+            </div>
+          </div>
+        ) : isError ? (
+          <ErrorState onRetry={() => void refetch()} />
+        ) : (
         <div className="grid lg:grid-cols-2 gap-6">
           {/* 테이블 선택 */}
           <div>
@@ -187,6 +217,7 @@ export default function Page() {
             </div>
           </div>
         </div>
+        )}
       </div>
     </div>
   );

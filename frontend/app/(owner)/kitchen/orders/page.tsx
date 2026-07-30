@@ -8,6 +8,8 @@ import { supabase } from "@/lib/supabase";
 import { apiFetch } from "@/lib/api";
 import OrderCard from "@/components/kitchen/OrderCard";
 import { OrderStatusBadge } from "@/components/owner/OrderStatusBadge";
+import { BoardSkeleton } from "@/components/shared/BoardSkeleton";
+import { ErrorState } from "@/components/shared/ErrorState";
 import { useQuery, useMutation } from "@tanstack/react-query";
 
 const STATUS_LIST: KitchenOrder["status"][] = ["접수됨", "조리중", "완료"];
@@ -25,11 +27,16 @@ export default function Page() {
   });
   const storeId = storeData?.id ?? null;
 
-  const { data: orders = [], refetch: refetchOrders } = useQuery<KitchenOrder[]>({
+  const {
+    data: orders = [],
+    isLoading,
+    isError,
+    refetch: refetchOrders,
+  } = useQuery<KitchenOrder[]>({
     queryKey: ["kitchen-orders"],
     queryFn: async () => {
       const res = await apiFetch("/orders");
-      if (!res.ok) return [];
+      if (!res.ok) throw new Error(`주문을 불러오지 못했습니다 (${res.status})`);
       const data: BackendOrder[] = await res.json();
       return data.map((o) => ({
         id: o.id,
@@ -120,6 +127,11 @@ export default function Page() {
 
       {/* 칸반 보드 */}
       <div className="max-w-7xl mx-auto p-6">
+        {isLoading ? (
+          <BoardSkeleton />
+        ) : isError ? (
+          <ErrorState onRetry={() => void refetchOrders()} />
+        ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {STATUS_LIST.map((status) => (
             <div key={status}>
@@ -151,6 +163,7 @@ export default function Page() {
             </div>
           ))}
         </div>
+        )}
       </div>
     </div>
   );
