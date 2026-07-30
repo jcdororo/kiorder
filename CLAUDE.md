@@ -33,6 +33,7 @@
 - Route Group: `(public)` / `(system)` / `(owner)`
 - 인증: HttpOnly 쿠키 + jose jwtVerify (proxy.ts)
 - Role: `SYSTEM_ADMIN` → `/system-admin/stores`, `STORE_OWNER` → `/owner/dashboard`
+- 디자인 시스템(다크 테마 컬러·컴포넌트 규칙): 프론트 UI 작업 시 `DESIGN.md` 참고
 
 ## 현재 진행 상황
 
