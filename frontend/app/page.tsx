@@ -78,7 +78,13 @@ const devices = [
   },
 ];
 
-const techBadges = ["Next.js", "NestJS", "TypeScript", "Prisma", "Supabase Realtime"];
+const techBadges = [
+  "Next.js",
+  "NestJS",
+  "TypeScript",
+  "Prisma",
+  "Supabase Realtime",
+];
 
 const sections = [
   {
@@ -145,16 +151,28 @@ export default function Page() {
             <span className="text-lg font-bold tracking-tight">KiOrder</span>
           </div>
           <div className="flex items-center gap-5 sm:gap-7">
-            <a href="#features" className="hidden sm:inline text-sm font-medium text-gray-400 hover:text-white transition-colors">
+            <a
+              href="#features"
+              className="hidden sm:inline text-sm font-medium text-gray-400 hover:text-white transition-colors"
+            >
               핵심 기능
             </a>
-            <a href="#roles" className="hidden sm:inline text-sm font-medium text-gray-400 hover:text-white transition-colors">
+            <a
+              href="#roles"
+              className="hidden sm:inline text-sm font-medium text-gray-400 hover:text-white transition-colors"
+            >
               화면 소개
             </a>
-            <a href="#demo" className="hidden sm:inline text-sm font-medium text-gray-400 hover:text-white transition-colors">
+            <a
+              href="#demo"
+              className="hidden sm:inline text-sm font-medium text-gray-400 hover:text-white transition-colors"
+            >
               데모
             </a>
-            <a href="#screens" className="bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">
+            <a
+              href="#screens"
+              className="bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+            >
               화면 둘러보기
             </a>
           </div>
@@ -170,17 +188,24 @@ export default function Page() {
         <h1 className="text-4xl sm:text-5xl lg:text-[56px] font-extrabold leading-[1.15] tracking-tight mb-6">
           테이블오더와 키오스크 웨이팅,
           <br />
-          이제 <span className="text-orange-400">하나의 화면</span>에서 관리하세요
+          이제 <span className="text-orange-400">하나의 화면</span>에서
+          관리하세요
         </h1>
         <p className="text-lg text-gray-400 leading-relaxed max-w-[620px] mx-auto mb-10">
-          손님의 주문과 웨이팅이 실시간으로 주방과 홀에 그대로 반영됩니다. 폴링도,
-          새로고침도 필요 없습니다.
+          손님의 주문과 웨이팅이 실시간으로 주방과 홀에 그대로 반영됩니다.
+          폴링도, 새로고침도 필요 없습니다.
         </p>
         <div className="flex gap-3.5 justify-center flex-wrap">
-          <a href="#screens" className="bg-orange-500 hover:bg-orange-600 text-white text-base font-semibold px-7 py-3.5 rounded-xl transition-colors">
+          <a
+            href="#screens"
+            className="bg-orange-500 hover:bg-orange-600 text-white text-base font-semibold px-7 py-3.5 rounded-xl transition-colors"
+          >
             화면 둘러보기 →
           </a>
-          <Link href="/login" className="bg-white/5 hover:bg-white/10 border border-white/10 text-gray-200 text-base font-semibold px-7 py-3.5 rounded-xl transition-colors no-underline">
+          <Link
+            href="/login"
+            className="bg-white/5 hover:bg-white/10 border border-white/10 text-gray-200 text-base font-semibold px-7 py-3.5 rounded-xl transition-colors no-underline"
+          >
             로그인
           </Link>
         </div>
@@ -218,19 +243,29 @@ export default function Page() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {features.map((f) => (
-            <div key={f.title} className="bg-gray-800 border border-white/10 rounded-2xl p-7">
-              <div className={`w-11 h-11 rounded-xl ${f.bg} flex items-center justify-center text-xl mb-4`}>
+            <div
+              key={f.title}
+              className="bg-gray-800 border border-white/10 rounded-2xl p-7"
+            >
+              <div
+                className={`w-11 h-11 rounded-xl ${f.bg} flex items-center justify-center text-xl mb-4`}
+              >
                 {f.icon}
               </div>
               <h3 className="text-lg font-bold mb-2">{f.title}</h3>
-              <p className="text-[15px] leading-relaxed text-gray-400">{f.desc}</p>
+              <p className="text-[15px] leading-relaxed text-gray-400">
+                {f.desc}
+              </p>
             </div>
           ))}
         </div>
       </div>
 
       {/* ONE PLATFORM, MANY DEVICES */}
-      <div id="roles" className="bg-gray-900 border-y border-white/10 py-24 scroll-mt-20">
+      <div
+        id="roles"
+        className="bg-gray-900 border-y border-white/10 py-24 scroll-mt-20"
+      >
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-2">
             <div className="text-[13px] font-bold text-orange-500 tracking-wider uppercase mb-3">
@@ -240,8 +275,8 @@ export default function Page() {
               로그인 한 번이면, 어떤 기기든 그 자리의 화면이 됩니다
             </h2>
             <p className="text-base text-gray-400 max-w-[620px] mx-auto">
-              매장에 놓인 태블릿과 사장님 노트북 — 같은 KiOrder 계정으로 로그인해서,
-              놓인 위치와 역할에 맞는 화면으로 바로 전환됩니다.
+              매장에 놓인 태블릿과 사장님 노트북 — 같은 KiOrder 계정으로
+              로그인해서, 놓인 위치와 역할에 맞는 화면으로 바로 전환됩니다.
             </p>
           </div>
 
@@ -262,7 +297,9 @@ export default function Page() {
                   {d.isLaptop ? (
                     <div>
                       <div className="bg-gray-700 border border-white/15 rounded-t-[10px] rounded-b aspect-[16/11] p-2 flex items-center justify-center">
-                        <div className={`w-full h-full ${d.screenBg} rounded flex items-center justify-center text-[26px]`}>
+                        <div
+                          className={`w-full h-full ${d.screenBg} rounded flex items-center justify-center text-[26px]`}
+                        >
                           {d.icon}
                         </div>
                       </div>
@@ -273,7 +310,9 @@ export default function Page() {
                   ) : (
                     <div className="bg-gray-700 border-2 border-white/15 rounded-2xl aspect-[3/4] p-2.5 flex flex-col items-center">
                       <div className="w-6 h-[3px] bg-gray-500 rounded-full mb-1.5" />
-                      <div className={`flex-1 w-full ${d.screenBg} rounded-lg flex items-center justify-center text-3xl`}>
+                      <div
+                        className={`flex-1 w-full ${d.screenBg} rounded-lg flex items-center justify-center text-3xl`}
+                      >
                         {d.icon}
                       </div>
                     </div>
@@ -284,7 +323,9 @@ export default function Page() {
                     {d.device}
                   </div>
                   <div className="text-base font-bold mb-1.5">{d.title}</div>
-                  <div className="text-[13px] text-gray-400 leading-normal">{d.desc}</div>
+                  <div className="text-[13px] text-gray-400 leading-normal">
+                    {d.desc}
+                  </div>
                 </div>
               </div>
             ))}
@@ -311,9 +352,12 @@ export default function Page() {
               className="w-full block bg-gray-950"
             />
             <div className="px-[22px] py-5">
-              <div className="text-base font-bold mb-1.5">테이블오더 → 주방 실시간 반영</div>
+              <div className="text-base font-bold mb-1.5">
+                테이블오더 → 주방 실시간 반영
+              </div>
               <div className="text-sm text-gray-400 leading-normal">
-                손님이 테이블오더로 주문을 넣으면, 폴링 없이 주방 칸반 보드에 즉시 반영됩니다.
+                손님이 테이블오더로 주문을 넣으면, 폴링 없이 주방 칸반 보드에
+                즉시 반영됩니다.
               </div>
             </div>
           </div>
@@ -325,9 +369,12 @@ export default function Page() {
               className="w-full block bg-gray-950"
             />
             <div className="px-[22px] py-5">
-              <div className="text-base font-bold mb-1.5">키오스크 웨이팅 풀플로우</div>
+              <div className="text-base font-bold mb-1.5">
+                키오스크 웨이팅 풀플로우
+              </div>
               <div className="text-sm text-gray-400 leading-normal">
-                웨이팅 등록 → QR 대기표 발급 → 대기현황 확인 → 호출 → 응답까지 전 과정이 실시간으로 연결됩니다.
+                웨이팅 등록 → QR 대기표 발급 → 대기현황 확인 → 호출 → 응답까지
+                전 과정이 실시간으로 연결됩니다.
               </div>
             </div>
           </div>
@@ -335,7 +382,10 @@ export default function Page() {
       </div>
 
       {/* 화면 둘러보기 (기존 네비게이션 허브 병합) */}
-      <div id="screens" className="bg-gray-900 border-y border-white/10 py-24 scroll-mt-20">
+      <div
+        id="screens"
+        className="bg-gray-900 border-y border-white/10 py-24 scroll-mt-20"
+      >
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-14">
             <div className="text-[13px] font-bold text-orange-500 tracking-wider uppercase mb-3">
@@ -345,19 +395,28 @@ export default function Page() {
               16개 화면을 직접 눌러보세요
             </h2>
             <p className="text-base text-gray-400 max-w-[620px] mx-auto">
-              역할별 화면으로 바로 이동합니다. 로그인이 필요한 화면은 위 테스트 계정을 사용하세요.
+              역할별 화면으로 바로 이동합니다. 로그인이 필요한 화면은 아래
+              테스트 계정을 사용하세요.
+            </p>
+            <p className="text-[13px] text-gray-500 mt-[18px]">
+              테스트 계정 &nbsp;ID: owner1@test.com &nbsp;·&nbsp; PW: test1234
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {sections.map((section) => {
               const Icon = section.icon;
               return (
-                <div key={section.title} className="bg-gray-800 rounded-2xl border border-white/10 p-6">
+                <div
+                  key={section.title}
+                  className="bg-gray-800 rounded-2xl border border-white/10 p-6"
+                >
                   <div className="flex items-center gap-3 mb-4">
                     <div className={`${section.color} p-2.5 rounded-lg`}>
                       <Icon className="w-5 h-5 text-white" />
                     </div>
-                    <h3 className="m-0 text-white text-base font-semibold">{section.title}</h3>
+                    <h3 className="m-0 text-white text-base font-semibold">
+                      {section.title}
+                    </h3>
                   </div>
                   <div className="space-y-2">
                     {section.links.map((link) => (
@@ -380,11 +439,16 @@ export default function Page() {
       {/* CTA */}
       <div className="max-w-6xl mx-auto px-6 py-24">
         <div className="bg-linear-to-br from-gray-800 to-gray-900 border border-orange-500/25 rounded-[20px] px-10 py-14 text-center">
-          <h2 className="text-3xl font-bold tracking-tight mb-3.5">지금 바로 체험해보세요</h2>
+          <h2 className="text-3xl font-bold tracking-tight mb-3.5">
+            지금 바로 체험해보세요
+          </h2>
           <p className="text-base text-gray-400 mb-8">
             회원가입 없이 테스트 계정으로 전체 기능을 둘러볼 수 있습니다.
           </p>
-          <a href="#screens" className="inline-block bg-orange-500 hover:bg-orange-600 text-white text-base font-semibold px-8 py-3.5 rounded-xl transition-colors">
+          <a
+            href="#screens"
+            className="inline-block bg-orange-500 hover:bg-orange-600 text-white text-base font-semibold px-8 py-3.5 rounded-xl transition-colors"
+          >
             화면 둘러보기 →
           </a>
         </div>
@@ -401,12 +465,17 @@ export default function Page() {
           </div>
           <div className="flex gap-2.5 flex-wrap">
             {techBadges.map((t) => (
-              <span key={t} className="text-xs text-gray-400 bg-white/5 border border-white/10 px-3 py-1.5 rounded-full">
+              <span
+                key={t}
+                className="text-xs text-gray-400 bg-white/5 border border-white/10 px-3 py-1.5 rounded-full"
+              >
                 {t}
               </span>
             ))}
           </div>
-          <span className="text-xs text-gray-500">© 2026 KiOrder. Made by jcdororo.</span>
+          <span className="text-xs text-gray-500">
+            © 2026 KiOrder. Made by jcdororo.
+          </span>
         </div>
       </div>
     </div>
