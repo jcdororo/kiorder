@@ -87,7 +87,6 @@ const statCards = [
 const quickLinks = [
   { href: "/owner/waiting", label: "웨이팅 관리" },
   { href: "/owner/menu", label: "메뉴 관리" },
-  { href: "/owner/table-settings", label: "테이블 설정" },
 ];
 
 export default function Page() {
@@ -140,7 +139,6 @@ export default function Page() {
   return (
     <div className="min-h-screen bg-[#111827] text-white">
       <div className="mx-auto px-6 py-8 max-w-7xl">
-
         {/* 헤더 */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
@@ -155,7 +153,9 @@ export default function Page() {
                 <LayoutDashboard className="w-6 h-6 text-orange-400" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-white leading-none">관리자 대시보드</h1>
+                <h1 className="text-2xl font-bold text-white leading-none">
+                  관리자 대시보드
+                </h1>
                 <p className="text-sm text-gray-400 mt-0.5">실시간 운영 현황</p>
               </div>
             </div>
@@ -235,10 +235,15 @@ export default function Page() {
         <div className="grid lg:grid-cols-2 gap-6">
           {/* 시간대별 매출 */}
           <div className="bg-[#1f2937] rounded-xl border border-white/10 p-6">
-            <h3 className="text-base font-semibold text-white mb-6">시간대별 매출</h3>
+            <h3 className="text-base font-semibold text-white mb-6">
+              시간대별 매출
+            </h3>
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={stats.salesByHour} barCategoryGap="40%">
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="rgba(255,255,255,0.06)"
+                />
                 <XAxis
                   dataKey="hour"
                   tick={{ fill: "#9ca3af", fontSize: 12 }}
@@ -252,7 +257,10 @@ export default function Page() {
                   tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
                 />
                 <Tooltip
-                  formatter={(value) => [`${Number(value).toLocaleString()}원`, "매출"]}
+                  formatter={(value) => [
+                    `${Number(value).toLocaleString()}원`,
+                    "매출",
+                  ]}
                   contentStyle={{
                     backgroundColor: "#111827",
                     border: "1px solid rgba(255,255,255,0.10)",
@@ -269,7 +277,9 @@ export default function Page() {
 
           {/* 인기 메뉴 */}
           <div className="bg-[#1f2937] rounded-xl border border-white/10 p-6">
-            <h3 className="text-base font-semibold text-white mb-6">인기 메뉴 TOP 4</h3>
+            <h3 className="text-base font-semibold text-white mb-6">
+              인기 메뉴 TOP 4
+            </h3>
             <div className="space-y-5">
               {stats.popularMenus.map((menu, idx) => {
                 const maxCount = stats.popularMenus[0].count;
@@ -281,9 +291,13 @@ export default function Page() {
                         <div className="w-7 h-7 rounded-full bg-orange-500/10 text-orange-400 flex items-center justify-center text-xs font-bold shrink-0">
                           {idx + 1}
                         </div>
-                        <span className="text-sm font-medium text-white">{menu.name}</span>
+                        <span className="text-sm font-medium text-white">
+                          {menu.name}
+                        </span>
                       </div>
-                      <span className="text-sm font-bold text-orange-400">{menu.count}건</span>
+                      <span className="text-sm font-bold text-orange-400">
+                        {menu.count}건
+                      </span>
                     </div>
                     <div className="w-full bg-white/5 rounded-full h-2 overflow-hidden">
                       <div
