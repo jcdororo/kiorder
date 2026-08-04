@@ -34,6 +34,7 @@
 - 인증: HttpOnly 쿠키 + jose jwtVerify (proxy.ts)
 - Role: `SYSTEM_ADMIN` → `/system-admin/stores`, `STORE_OWNER` → `/owner/dashboard`
 - 디자인 시스템(다크 테마 컬러·컴포넌트 규칙): 프론트 UI 작업 시 `DESIGN.md` 참고
+- **학습 모드 전환(2026-08-04)**: 완성된 포트폴리오보다 "AI로 팀을 꾸려 워크플로우를 배우는 것"이 목표. 로컬 `docs/roadmap.md`에 3단계(단일 에이전트→서브에이전트 팀→Orca 병렬) 로드맵 정의. 현재 1단계 실전 과제 완료, 2단계(`.claude/agents/` 역할 분업) 착수 중
 
 ## 현재 진행 상황
 
@@ -73,8 +74,12 @@
 - Supabase Realtime storeId 필터 적용 (매장별 이벤트 격리)
 - 홀 완료 버튼 validation (hallReceived 없으면 비활성)
 - 배포 로그인/로그아웃 후 페이지 이동 안 되는 버그 해결 (router.push → window.location.href, 커밋 `4d3125e`)
+- (2026-08-04) `owner/menu/page.tsx` 컴포넌트 분리 — `OwnerSidebar`/`MenuFormDialog`/`MenuTable` 추출, 565→114줄 (`owner/waiting`도 사이드바 공유로 455→411줄). tsc·Playwright 검증 완료, **아직 미커밋**
+- (2026-08-04) `.claude/agents/frontend-dev.md`·`code-reviewer.md`·`test-writer.md` 역할 정의 생성. **주의**: 같은 세션 안에서 만든 커스텀 서브에이전트는 하네스가 세션 시작 시 1회만 읽어서 바로 호출 불가 — 다음 세션(재시작)부터 인식됨
 
-### 다음 할 일 (우선순위 순)
+> ⚠️ 아래 "다음 할 일"은 CEO 로드맵(포트폴리오 완성 목표) 기준으로 작성된 이후 오래 갱신되지 않음 — 실제로는 POS/훅 3개/컴포넌트 분리/타입 분리/로딩·에러 처리 등 상당수 항목이 이미 완료됨(자세한 최신 상태는 memory `project_frontend_migration.md` 참고). 지금은 위 "학습 모드 전환"이 우선이라 이 목록은 정리가 밀려있는 상태.
+
+### 다음 할 일 (우선순위 순, 일부 stale)
 
 #### P1 — 포트폴리오 완성
 - **커스텀 훅 나머지 2개** (CEO 로드맵 Week 1) — `useOwnerMenu()`, `usePosOrders()` ← 다음 작업
