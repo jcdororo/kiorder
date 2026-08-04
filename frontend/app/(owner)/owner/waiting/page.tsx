@@ -1,18 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Clock,
-  GripVertical,
-  PhoneCall,
-  LogIn,
-  X,
-  UtensilsCrossed,
-  Home,
-} from "lucide-react";
+import { Clock, GripVertical, PhoneCall, LogIn, X } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -21,12 +12,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useRouter } from "next/navigation";
 import { WaitingCustomer } from "@/types/waiting";
 import { supabase } from "@/lib/supabase";
 import { apiFetch } from "@/lib/api";
 import { Skeleton } from "@/components/shared/Skeleton";
 import { ErrorState } from "@/components/shared/ErrorState";
+import { OwnerSidebar } from "@/components/owner/OwnerSidebar";
 import { useQuery, useMutation } from "@tanstack/react-query";
 
 type WaitingRow = WaitingCustomer & { waitingTime: string };
@@ -44,8 +35,6 @@ const statusBadgeClass = (status: WaitingCustomer["status"]) => {
 };
 
 export default function Page() {
-  const router = useRouter();
-
   const {
     data: customers = [],
     isLoading,
@@ -123,68 +112,7 @@ export default function Page() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col md:flex-row">
-      {/* Mobile Header */}
-      <div className="md:hidden bg-gray-900 border-b border-white/10 px-4 py-3 flex items-center justify-between">
-        <div>
-          <h1 className="text-white font-semibold">맛있는 식당</h1>
-          <p className="text-xs text-gray-500">웨이팅 관리</p>
-        </div>
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-gray-400 hover:text-white hover:bg-white/10"
-            onClick={() => router.push("/owner/menu")}
-          >
-            메뉴
-          </Button>
-          <Link href="/">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-gray-500 hover:text-white hover:bg-white/10"
-            >
-              홈
-            </Button>
-          </Link>
-        </div>
-      </div>
-
-      {/* Sidebar — 태블릿: 아이콘만(w-14), PC: 전체(w-60) */}
-      <div className="hidden md:flex md:w-14 lg:w-60 shrink-0 bg-gray-900 border-r border-white/10 md:p-2 lg:p-4 flex-col">
-        <div className="mb-8 hidden lg:block">
-          <h1 className="text-xl text-white mb-1">맛있는 식당</h1>
-          <p className="text-sm text-gray-500">관리자</p>
-        </div>
-
-        <nav className="space-y-2 flex-1">
-          <Button
-            variant="ghost"
-            className="w-full justify-center lg:justify-start bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 px-2 lg:px-4"
-          >
-            <PhoneCall className="w-4 h-4 shrink-0 lg:mr-2" />
-            <span className="hidden lg:inline">웨이팅 관리</span>
-          </Button>
-          <Button
-            variant="ghost"
-            className="w-full justify-center lg:justify-start text-gray-400 hover:text-white hover:bg-white/10 px-2 lg:px-4"
-            onClick={() => router.push("/owner/menu")}
-          >
-            <UtensilsCrossed className="w-4 h-4 shrink-0 lg:mr-2" />
-            <span className="hidden lg:inline">메뉴 관리</span>
-          </Button>
-        </nav>
-
-        <Link href="/">
-          <Button
-            variant="ghost"
-            className="w-full justify-center lg:justify-start text-gray-500 hover:text-white hover:bg-white/10 px-2 lg:px-4"
-          >
-            <Home className="w-4 h-4 shrink-0 lg:mr-2" />
-            <span className="hidden lg:inline">홈으로</span>
-          </Button>
-        </Link>
-      </div>
+      <OwnerSidebar active="waiting" />
 
       {/* Main Content */}
       <div className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto">
