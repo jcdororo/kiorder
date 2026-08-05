@@ -47,9 +47,12 @@ const menuSchema = z.object({
 
 type MenuFormValues = z.infer<typeof menuSchema>;
 
+// category 기본값을 비워 둔다. 예전 기본값 "메인"은 실제 카테고리 목록에 없는 값이라,
+// 사장님이 카테고리를 건드리지 않고 저장하면 어떤 필터 탭으로도 찾을 수 없는
+// 미아 항목이 됐다. 빈 값이면 zod가 막아서 반드시 선택하게 된다.
 const defaultFormValues: MenuFormValues = {
   name: "",
-  category: "메인",
+  category: "",
   price: 0,
   type: "FOOD",
   description: "",
@@ -164,7 +167,7 @@ export function MenuFormDialog({
                   <FormLabel className="text-gray-300">카테고리</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="예: 한우, 음료, 사이드"
+                      placeholder="목록에서 고르거나 새로 입력"
                       className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
                       list="category-suggestions"
                       {...field}

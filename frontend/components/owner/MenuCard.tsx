@@ -1,10 +1,29 @@
 import { Pencil, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
 import { AdminMenuItem } from "@/types/menu";
 import { MenuTypeBadge } from "./MenuTypeBadge";
+
+// 받침 유무에 따라 "을/를" 조사를 고른다 (예: "등심" → "을", "커피" → "를")
+function objectParticle(word: string) {
+  const lastChar = word.charCodeAt(word.length - 1);
+  if (lastChar < 0xac00 || lastChar > 0xd7a3) return "를";
+  const hasBatchim = (lastChar - 0xac00) % 28 !== 0;
+  return hasBatchim ? "을" : "를";
+}
 
 export function MenuCard({
   item,
@@ -40,6 +59,7 @@ export function MenuCard({
             <Switch
               checked={item.available}
               onCheckedChange={() => onToggle(item)}
+              className="data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-gray-700"
             />
             <span
               className={`text-xs ${item.available ? "text-green-400" : "text-gray-500"}`}
@@ -58,14 +78,38 @@ export function MenuCard({
         >
           <Pencil className="w-4 h-4" />
         </Button>
-        <Button
-          size="icon"
-          variant="ghost"
-          className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-          onClick={() => onDelete(item.id)}
-        >
-          <Trash2 className="w-4 h-4" />
-        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent className="bg-gray-900 border-white/10 text-white">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-white">
+                {`'${item.name}'${objectParticle(item.name)} 삭제할까요?`}
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-gray-400">
+                삭제하면 메뉴 목록에서 즉시 사라지며 복구할 수 없습니다.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="border-gray-600 bg-transparent text-gray-300 hover:bg-gray-800 hover:text-white">
+                취소
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => onDelete(item.id)}
+                className="bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 hover:text-red-300"
+              >
+                삭제
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

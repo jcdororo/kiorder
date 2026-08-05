@@ -20,7 +20,10 @@ import { ErrorState } from "@/components/shared/ErrorState";
 import { OwnerSidebar } from "@/components/owner/OwnerSidebar";
 import { useQuery, useMutation } from "@tanstack/react-query";
 
-type WaitingRow = WaitingCustomer & { waitingTime: string };
+type WaitingRow = WaitingCustomer & {
+  waitingTime: string;
+  elapsedMinutes: number;
+};
 
 const isDone = (status: WaitingCustomer["status"]) =>
   status === "입장완료" || status === "취소";
@@ -32,6 +35,20 @@ const statusBadgeClass = (status: WaitingCustomer["status"]) => {
   if (status === "입장완료")
     return "bg-green-500/20 text-green-400 border-green-500/30";
   return "bg-red-500/20 text-red-400 border-red-500/30";
+};
+
+// 클라이언트-서버 시계 오차나 방금 등록된 항목 때문에 음수가 나올 수 있어 0으로 막는다.
+// 개별 표시와 평균 계산이 같은 값을 쓰도록 여기서 한 번만 계산한다.
+const elapsedMinutes = (createdAt: string) =>
+  Math.max(0, Math.floor((Date.now() - new Date(createdAt).getTime()) / 60000));
+
+// 분 단위로만 표시하면 오래된 항목이 "41290분"처럼 읽을 수 없는 값이 된다.
+// 실제 운영에서도 목록을 정리하지 않으면 언제든 재현되므로 단위를 전환한다.
+const formatWaitingTime = (minutes: number) => {
+  if (minutes < 60) return `${minutes}분`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}시간 ${minutes % 60}분`;
+  return `${Math.floor(hours / 24)}일 ${hours % 24}시간`;
 };
 
 export default function Page() {
@@ -54,15 +71,19 @@ export default function Page() {
           createdAt: string;
           status: WaitingCustomer["status"];
           guestResponse?: string | null;
-        }) => ({
-          id: e.id,
-          number: e.number,
-          phone: e.phone,
-          registeredAt: e.createdAt,
-          status: e.status,
-          guestResponse: e.guestResponse,
-          waitingTime: `${Math.floor((Date.now() - new Date(e.createdAt).getTime()) / 60000)}분`,
-        }),
+        }) => {
+          const minutes = elapsedMinutes(e.createdAt);
+          return {
+            id: e.id,
+            number: e.number,
+            phone: e.phone,
+            registeredAt: e.createdAt,
+            status: e.status,
+            guestResponse: e.guestResponse,
+            elapsedMinutes: minutes,
+            waitingTime: formatWaitingTime(minutes),
+          };
+        },
       );
     },
   });
@@ -97,10 +118,21 @@ export default function Page() {
   const maskPhone = (phone: string) =>
     phone.replace(/(\d{3})-(\d{4})-(\d{4})/, "$1-****-$3");
 
+  // 대기 중인 팀의 "지금까지 기다린 시간" 평균. 입장 완료까지 실제로 걸린 시간의
+  // 평균이 아니다 — WaitingEntry에 입장 시각 필드가 없어 계산할 수 없다.
+  // 라벨도 계산 내용에 맞춰 "현재 평균 경과"로 표기한다.
+  // 경과 시간은 queryFn에서 이미 계산해둔 값을 쓴다(렌더 중 Date.now() 호출 금지).
+  const waitingNow = customers.filter((c) => c.status === "대기중");
+  const avgElapsed = waitingNow.length
+    ? Math.round(
+        waitingNow.reduce((sum, c) => sum + c.elapsedMinutes, 0) / waitingNow.length,
+      )
+    : 0;
+
   const stats = {
-    waiting: customers.filter((c) => c.status === "대기중").length,
+    waiting: waitingNow.length,
     totalToday: customers.filter((c) => c.status === "입장완료").length,
-    avgWaitTime: 23,
+    avgElapsed,
     cancelled: customers.filter((c) => c.status === "취소").length,
   };
 
@@ -153,10 +185,10 @@ export default function Page() {
           </div>
           <div className="bg-gray-800 rounded-xl p-4 md:p-5 border border-white/10">
             <p className="text-xs md:text-sm text-gray-500 mb-1 md:mb-2">
-              평균 대기 시간
+              현재 평균 경과
             </p>
             <p className="text-2xl md:text-3xl text-white">
-              {stats.avgWaitTime}분
+              {stats.avgElapsed}분
             </p>
           </div>
           <div className="bg-gray-800 rounded-xl p-4 md:p-5 border border-white/10">
