@@ -8,9 +8,9 @@ import {
   Users,
   Clock,
   TrendingUp,
-  ArrowLeft,
   LogOut,
 } from "lucide-react";
+import { BackToTour } from "@/components/shared/BackToTour";
 import {
   BarChart,
   Bar,
@@ -142,12 +142,7 @@ export default function Page() {
         {/* 헤더 */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
-            <Link
-              href="/"
-              className="text-gray-400 hover:text-white transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Link>
+            <BackToTour variant="icon" />
             <div className="flex items-center gap-3">
               <div className="bg-orange-500/10 p-2.5 rounded-xl">
                 <LayoutDashboard className="w-6 h-6 text-orange-400" />

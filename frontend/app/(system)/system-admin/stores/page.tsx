@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import {
   Store,
   Users,
@@ -9,7 +8,6 @@ import {
   Plus,
   Edit2,
   Trash2,
-  ArrowLeft,
   Building2,
   Mail,
   Phone,
@@ -21,6 +19,7 @@ import {
   Crown,
   LogOut,
 } from "lucide-react";
+import { BackToTour } from "@/components/shared/BackToTour";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -267,13 +266,7 @@ export default function Page() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-orange-50 to-white">
       <div className="container mx-auto px-4 py-6 max-w-7xl">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-muted-foreground mb-6 hover:text-foreground transition-colors no-underline"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span>홈으로</span>
-        </Link>
+        <BackToTour className="mb-6" />
 
         {/* 헤더 */}
         <div className="mb-8">

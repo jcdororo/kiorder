@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Users, Phone, ArrowLeft } from "lucide-react";
-import Link from "next/link";
+import { Users, Phone } from "lucide-react";
+import { BackToTour } from "@/components/shared/BackToTour";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api";
 import { useMutation } from "@tanstack/react-query";
@@ -66,13 +66,7 @@ export default function Page() {
   return (
     <div className="min-h-screen bg-linear-to-b from-gray-950 to-gray-900 p-6">
       <div className="max-w-2xl mx-auto">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-gray-400 mb-6 hover:text-white transition-colors no-underline"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span>홈으로</span>
-        </Link>
+        <BackToTour className="mb-6" />
 
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-orange-500 rounded-full mb-4">

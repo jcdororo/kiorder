@@ -1,9 +1,12 @@
 import { UtensilsCrossed } from "lucide-react";
 import Tables from "@/components/owner/Tables";
+import { BackToTour } from "@/components/shared/BackToTour";
 
 export default async function Page() {
   return (
-    <div className="min-h-screen bg-[#111827] flex flex-col items-center justify-center p-8">
+    <div className="min-h-screen bg-[#111827] flex flex-col items-center justify-center p-8 relative">
+      <BackToTour className="absolute top-6 left-6" />
+
       <div className="flex items-center gap-3 mb-10">
         <div className="bg-orange-500 p-2.5 rounded-xl">
           <UtensilsCrossed className="w-6 h-6 text-white" />

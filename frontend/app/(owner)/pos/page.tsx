@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { CreditCard, ArrowLeft, CheckCircle2, Trash2, Loader2 } from "lucide-react";
+import { BackToTour } from "@/components/shared/BackToTour";
+import { CreditCard, CheckCircle2, Trash2, Loader2 } from "lucide-react";
 import { usePosOrders } from "@/hooks/usePosOrders";
 import { Table } from "@/types/order";
 import { Skeleton } from "@/components/shared/Skeleton";
@@ -50,13 +50,7 @@ export default function Page() {
   return (
     <div className="min-h-screen bg-[#111827] text-white">
       <div className="container mx-auto px-4 py-6 max-w-6xl">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-gray-400 mb-6 hover:text-white transition-colors no-underline"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span>홈으로</span>
-        </Link>
+        <BackToTour className="mb-6" />
 
         <div className="mb-8 flex items-center gap-3">
           <div className="bg-orange-500 p-3 rounded-xl">

@@ -34,7 +34,7 @@ export function OwnerSidebar({ active }: OwnerSidebarProps) {
           >
             {mobileLinkLabel}
           </Button>
-          <Link href="/">
+          <Link href="/#screens">
             <Button
               variant="ghost"
               size="sm"
@@ -80,7 +80,7 @@ export function OwnerSidebar({ active }: OwnerSidebarProps) {
           </Button>
         </nav>
 
-        <Link href="/">
+        <Link href="/#screens">
           <Button
             variant="ghost"
             className="w-full justify-center lg:justify-start text-gray-500 hover:text-white hover:bg-white/10 px-2 lg:px-4"
