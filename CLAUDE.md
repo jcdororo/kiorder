@@ -35,6 +35,7 @@
 - Role: `SYSTEM_ADMIN` → `/system-admin/stores`, `STORE_OWNER` → `/owner/dashboard`
 - 디자인 시스템(다크 테마 컬러·컴포넌트 규칙): 프론트 UI 작업 시 `DESIGN.md` 참고
 - **학습 모드 전환(2026-08-04)**: 완성된 포트폴리오보다 "AI로 팀을 꾸려 워크플로우를 배우는 것"이 목표. 로컬 `docs/roadmap.md`에 3단계(단일 에이전트→서브에이전트 팀→Orca 병렬) 로드맵 정의. 현재 1단계 실전 과제 완료, 2단계(`.claude/agents/` 역할 분업) 착수 중
+- **팀 파이프라인(하네스)**: 규모 있는 작업은 `.claude/skills/kiorder-flow/SKILL.md`의 절차를 따른다 — 기획(`product-planner`) → 사람 판단 → 구현(`frontend-dev`) → 병렬 검증(`code-reviewer` ∥ `ux-reviewer`) → 사람 판단 → 반영·테스트. 각 역할은 `.claude/agents/memory/{역할}.md`에 경험을 누적한다. 작은 작업까지 파이프라인을 태우지 말 것(비용 가드는 SKILL.md 참고)
 
 ## 현재 진행 상황
 
