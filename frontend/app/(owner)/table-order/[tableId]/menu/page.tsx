@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { MenuItem } from "@/types/menu";
 import { CartItem } from "@/types/order";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, readErrorMessage } from "@/lib/api";
 import Image from "next/image";
 import { useTableMenu } from "@/hooks/useTableMenu";
 import { useFlyToCart } from "@/hooks/useFlyToCart";
@@ -68,7 +68,14 @@ export default function Page() {
           })),
         }),
       });
-      if (!res.ok) throw new Error(`주문 전송에 실패했습니다 (${res.status})`);
+      if (!res.ok) {
+        throw new Error(
+          await readErrorMessage(
+            res,
+            `주문 전송에 실패했습니다 (${res.status})`,
+          ),
+        );
+      }
     },
     onSuccess: () => {
       setCart([]);
@@ -198,14 +205,28 @@ export default function Page() {
     if (items.length === 0) return;
     setIsServiceSubmitting(true);
     try {
-      await apiFetch("/orders", {
+      const res = await apiFetch("/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tableId, items }),
       });
+      // 응답을 확인하지 않아 서버가 거절해도 "요청 완료!"가 떴다.
+      // 실패하면 장바구니를 비우지 않고 그대로 두어 손님이 다시 시도할 수 있게 한다.
+      if (!res.ok) {
+        toast.error(
+          await readErrorMessage(
+            res,
+            `요청 전송에 실패했습니다 (${res.status})`,
+          ),
+        );
+        return;
+      }
       setServiceCart({});
       setServiceOrdered(true);
       setTimeout(() => setServiceOrdered(false), 2000);
+    } catch {
+      // 네트워크 단절 등으로 요청 자체가 실패한 경우
+      toast.error("요청 전송에 실패했습니다");
     } finally {
       setIsServiceSubmitting(false);
     }
