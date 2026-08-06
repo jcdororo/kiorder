@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  frontend:
+    name: frontend (type + lint)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+
+      # next-env.d.ts / .next/types 는 gitignore 대상이라 체크아웃에 없지만,
+      # tsconfig의 include에 없는 파일은 조용히 무시되므로 tsc는 정상 동작한다(앱 파일 67개 검사 확인).
+      # `next typegen`을 넣으면 오히려 생성물(.next/dev/types/*)이 tsc 파싱 에러를 내므로 넣지 않는다.
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+  backend:
+    name: backend (build + lint)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - run: npm ci
+
+      # nest build가 생성된 Prisma client 타입에 의존한다.
+      # generate는 DB에 접속하지 않지만 prisma.config.ts가 DIRECT_URL을 읽으므로 더미 값을 준다.
+      - name: Generate Prisma client
+        run: npx prisma generate
+        env:
+          DIRECT_URL: postgresql://user:pass@localhost:5432/dummy
+
+      - name: Build
+        run: npm run build
+
+      # package.json의 lint 스크립트는 --fix가 붙어 파일을 수정한다. CI에서는 검사만 한다.
+      - name: Lint
+        run: npx eslint "{src,apps,libs,test}/**/*.ts"

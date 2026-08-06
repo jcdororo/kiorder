@@ -37,7 +37,10 @@ export class OrderController {
   }
 
   @Patch(':id/hall-receive')
-  updateHallReceived(@Param('id') id: string, @Body() body: { hallReceived: boolean }) {
+  updateHallReceived(
+    @Param('id') id: string,
+    @Body() body: { hallReceived: boolean },
+  ) {
     return this.orderService.updateHallReceived(id, body.hallReceived);
   }
 }

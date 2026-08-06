@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Plus, Minus, ShoppingCart, Trash2 } from "lucide-react";
 import Link from "next/link";
@@ -35,11 +35,9 @@ export default function Page() {
     },
   });
 
-  useEffect(() => {
-    if (tables.length > 0) {
-      setSelectedTableId((prev) => prev || tables[0].id);
-    }
-  }, [tables]);
+  // 테이블 목록 로드 전엔 selectedTableId가 빈 값이라 첫 테이블로 폴백한다.
+  // effect로 state를 동기화하면 연쇄 렌더가 생기므로 렌더 중 파생값으로 계산한다.
+  const effectiveTableId = selectedTableId || tables[0]?.id || "";
 
   const submitMutation = useMutation({
     mutationFn: async () => {
@@ -47,7 +45,7 @@ export default function Page() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          tableId: selectedTableId,
+          tableId: effectiveTableId,
           items: cart.map((i) => ({
             menuItemId: i.id,
             name: i.name,
@@ -102,7 +100,7 @@ export default function Page() {
           <div className="flex items-center gap-3">
             <label className="text-sm text-gray-400">테이블</label>
             <select
-              value={selectedTableId}
+              value={effectiveTableId}
               onChange={(e) => setSelectedTableId(e.target.value)}
               className="bg-[#111827] border border-white/20 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500"
             >
@@ -205,7 +203,7 @@ export default function Page() {
             </div>
             <button
               onClick={() => submitMutation.mutate()}
-              disabled={!selectedTableId || cart.length === 0 || submitMutation.isPending}
+              disabled={!effectiveTableId || cart.length === 0 || submitMutation.isPending}
               className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-white/10 disabled:text-gray-600 text-white font-semibold py-2.5 rounded-lg transition-colors text-sm"
             >
               {submitMutation.isPending ? "처리 중..." : "주문 완료"}
