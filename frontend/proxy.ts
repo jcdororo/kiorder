@@ -31,7 +31,14 @@ export async function proxy(request: NextRequest) {
   }
 
   if (!token) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    // 포트폴리오 열람자가 공유받은 깊은 링크(예: /table-order/{id}/menu)로 바로 들어와도
+    // 화면을 볼 수 있어야 한다. 로그인 화면으로 보내면 계정을 모르는 사람은 여기서 막힌다.
+    // 자동 로그인을 거쳐 원래 가려던 곳으로 보낸다.
+    // 데모 계정이 설정돼 있지 않으면 auto-login 라우트가 알아서 /login으로 폴백하고,
+    // 그 경로는 이 미들웨어의 위쪽 분기에서 통과되므로 무한 루프는 생기지 않는다.
+    const autoLogin = new URL("/api/auth/auto-login", request.url);
+    autoLogin.searchParams.set("redirectTo", pathname + request.nextUrl.search);
+    return NextResponse.redirect(autoLogin);
   }
 
   try {
