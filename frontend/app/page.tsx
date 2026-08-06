@@ -86,45 +86,48 @@ const techBadges = [
   "Supabase Realtime",
 ];
 
+const autoLoginPath = (dest: string) =>
+  `/api/auth/auto-login?redirectTo=${encodeURIComponent(dest)}`;
+
 const sections = [
   {
     title: "키오스크 (손님용)",
     icon: Users,
     color: "bg-blue-500",
-    links: [{ name: "웨이팅 등록", path: "/kiosk/waiting" }],
+    links: [{ name: "웨이팅 등록", path: autoLoginPath("/kiosk/waiting") }],
   },
   {
     title: "테이블오더 (손님용)",
     icon: UtensilsCrossed,
     color: "bg-orange-500",
-    links: [{ name: "테이블 선택", path: "/table-order" }],
+    links: [{ name: "테이블 선택", path: autoLoginPath("/table-order") }],
   },
   {
     title: "주방 (직원용)",
     icon: ChefHat,
     color: "bg-red-500",
-    links: [{ name: "주문 관리", path: "/kitchen/orders" }],
+    links: [{ name: "주문 관리", path: autoLoginPath("/kitchen/orders") }],
   },
   {
     title: "홀 (직원용)",
     icon: ConciergeBell,
     color: "bg-sky-500",
-    links: [{ name: "홀 주문 관리", path: "/hall/orders" }],
+    links: [{ name: "홀 주문 관리", path: autoLoginPath("/hall/orders") }],
   },
   {
     title: "포스기 (직원용)",
     icon: CreditCard,
     color: "bg-purple-500",
-    links: [{ name: "결제 화면", path: "/pos" }],
+    links: [{ name: "결제 화면", path: autoLoginPath("/pos") }],
   },
   {
     title: "관리자 (사장님용)",
     icon: LayoutDashboard,
     color: "bg-emerald-500",
     links: [
-      { name: "대시보드", path: "/owner/dashboard" },
-      { name: "웨이팅 관리", path: "/owner/waiting" },
-      { name: "메뉴 관리", path: "/owner/menu" },
+      { name: "대시보드", path: autoLoginPath("/owner/dashboard") },
+      { name: "웨이팅 관리", path: autoLoginPath("/owner/waiting") },
+      { name: "메뉴 관리", path: autoLoginPath("/owner/menu") },
     ],
   },
   {
@@ -203,10 +206,10 @@ export default function Page() {
             화면 둘러보기 →
           </a>
           <Link
-            href="/login"
+            href={autoLoginPath("/owner/dashboard")}
             className="bg-white/5 hover:bg-white/10 border border-white/10 text-gray-200 text-base font-semibold px-7 py-3.5 rounded-xl transition-colors no-underline"
           >
-            로그인
+            서비스 체험하기
           </Link>
         </div>
         <p className="text-[13px] text-gray-500 mt-[18px]">
