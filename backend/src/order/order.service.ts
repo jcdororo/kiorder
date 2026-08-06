@@ -69,7 +69,8 @@ export class OrderService {
   async updateOrderStatus(id: string, status: string) {
     const data: Record<string, unknown> = { status };
     if (status === '조리중') data.startedAt = new Date();
-    if (status === '완료' || status === '결제완료') data.completedAt = new Date();
+    if (status === '완료' || status === '결제완료')
+      data.completedAt = new Date();
     return this.prisma.order.update({
       where: { id },
       data,
