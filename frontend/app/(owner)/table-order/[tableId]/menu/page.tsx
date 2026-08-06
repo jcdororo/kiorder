@@ -15,6 +15,8 @@ import { CartItem } from "@/types/order";
 import { apiFetch } from "@/lib/api";
 import Image from "next/image";
 import { useTableMenu } from "@/hooks/useTableMenu";
+import { useFlyToCart } from "@/hooks/useFlyToCart";
+import FlyingThumb from "@/components/table-order/FlyingThumb";
 
 type Tab = "menu" | "service";
 
@@ -31,6 +33,19 @@ export default function Page() {
   const [cartView, setCartView] = useState<"cart" | "receipt">("cart");
   const mainRef = useRef<HTMLElement>(null);
   const isScrollingRef = useRef(false);
+  // 비행 도착점. 배지는 totalItems > 0일 때만 렌더되어 첫 담기 시점에 존재하지 않으므로,
+  // 항상 존재하는 장바구니 탭 버튼을 목표로 삼는다.
+  const cartTabRef = useRef<HTMLButtonElement>(null);
+  const { flights, fly, done } = useFlyToCart();
+  // 배지 펌프를 담기 시점이 아니라 "비행체가 도착한 시점"에 터뜨리기 위한 카운터.
+  // totalItems를 key로 쓰면 비행체가 아직 출발 카드 위에 있을 때 이미 펌프가 끝나
+  // 두 연출이 인과로 읽히지 않는다(UX 검증에서 162ms 프레임으로 확인됨).
+  const [landed, setLanded] = useState(0);
+
+  const handleFlightDone = (id: number) => {
+    done(id);
+    setLanded((n) => n + 1);
+  };
 
   const {
     menus,
@@ -95,6 +110,29 @@ export default function Page() {
         },
       ];
     });
+  };
+
+  // 메뉴 카드에서만 호출한다. 장바구니 안의 + 버튼은 이미 목적지에 있으므로 날릴 필요가 없다.
+  const addFromCard = (
+    e: React.MouseEvent<HTMLButtonElement>,
+    menu: MenuItem,
+  ) => {
+    addToCart(menu); // 상태는 즉시 반영한다. 애니메이션은 순수 장식이라 조작을 지연시키지 않는다.
+    const thumb = e.currentTarget
+      .closest("[data-menu-card]")
+      ?.querySelector("[data-menu-thumb]");
+    const target = cartTabRef.current;
+    const flew =
+      thumb && target
+        ? fly(
+            thumb.getBoundingClientRect(),
+            target.getBoundingClientRect(),
+            menu.image,
+          )
+        : false;
+    // 모션 최소화 설정이거나 좌표를 못 얻어 비행이 없으면 도착을 기다릴 수 없다.
+    // 그 경우엔 배지 펌프를 즉시 발화시켜 피드백이 통째로 사라지지 않게 한다.
+    if (!flew) setLanded((n) => n + 1);
   };
 
   const removeFromCart = (menuId: string) => {
@@ -238,14 +276,20 @@ export default function Page() {
                   {items.map((menu) => (
                     <div
                       key={menu.id}
+                      data-menu-card
                       className="bg-[#1f2937] rounded-xl overflow-hidden border border-white/10 hover:border-orange-500/50 transition-all"
                     >
-                      <div className="relative aspect-square bg-[#374151] flex items-center justify-center overflow-hidden">
+                      <div
+                        data-menu-thumb
+                        className="relative aspect-square bg-[#374151] flex items-center justify-center overflow-hidden"
+                      >
                         {menu.image ? (
                           <Image
                             src={menu.image}
                             alt={menu.name}
                             fill
+                            // FlyingThumb와 동일해야 /_next/image URL이 일치해 캐시가 재사용된다.
+                            sizes="(max-width: 768px) 40vw, (max-width: 1024px) 25vw, 18vw"
                             className="object-cover"
                           />
                         ) : (
@@ -260,7 +304,7 @@ export default function Page() {
                           {menu.price.toLocaleString()}원
                         </p>
                         <button
-                          onClick={() => addToCart(menu)}
+                          onClick={(e) => addFromCard(e, menu)}
                           className="mt-2 w-full py-1.5 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white rounded-lg text-sm flex items-center justify-center gap-1 transition-all duration-150"
                         >
                           <Plus className="w-3.5 h-3.5" /> 담기
@@ -278,6 +322,7 @@ export default function Page() {
             {/* 토글 태그 */}
             <div className="px-4 py-3 border-b border-white/10 flex gap-2">
               <button
+                ref={cartTabRef}
                 onClick={() => setCartView("cart")}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                   cartView === "cart"
@@ -289,7 +334,8 @@ export default function Page() {
                 장바구니
                 {totalItems > 0 && (
                   <span
-                    className={`text-[10px] rounded-full w-4 h-4 flex items-center justify-center leading-none ${
+                    key={landed}
+                    className={`animate-in zoom-in-50 duration-200 text-[10px] rounded-full w-4 h-4 flex items-center justify-center leading-none ${
                       cartView === "cart"
                         ? "bg-white/25"
                         : "bg-orange-500 text-white"
@@ -335,7 +381,7 @@ export default function Page() {
                     cart.map((item) => (
                       <div
                         key={item.id}
-                        className="flex items-center justify-between gap-2"
+                        className="flex items-center justify-between gap-2 animate-in slide-in-from-right-4 fade-in duration-200"
                       >
                         <div className="flex items-center gap-2 min-w-0">
                           {/* {item.image ? (
@@ -359,7 +405,12 @@ export default function Page() {
                           >
                             <Minus className="w-3 h-3" />
                           </button>
-                          <span className="w-4 text-center text-sm">
+                          {/* 이미 담긴 메뉴를 또 담으면 새 줄이 생기지 않으므로,
+                              수량 숫자를 리마운트시켜 변경을 알린다. */}
+                          <span
+                            key={item.quantity}
+                            className="w-4 text-center text-sm animate-qty-bump"
+                          >
                             {item.quantity}
                           </span>
                           <button
@@ -569,6 +620,12 @@ export default function Page() {
           )}
         </div>
       )}
+
+      {/* 장바구니로 날아가는 썸네일. position:fixed라 트리 위치와 무관하지만,
+          장바구니 리스트의 overflow-y-auto에 잘리지 않도록 패널 밖에 둔다. */}
+      {flights.map((flight) => (
+        <FlyingThumb key={flight.id} flight={flight} onDone={handleFlightDone} />
+      ))}
 
       {/* 주문 완료 모달 */}
       {showOrderModal && (

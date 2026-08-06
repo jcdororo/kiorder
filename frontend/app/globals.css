@@ -148,3 +148,24 @@
     font-size: var(--font-size);
   }
 }
+
+/* 장바구니 수량 변경 강조.
+   zoom-in만으로는 w-4 박스 안 14px 숫자의 변화량이 3~4px뿐이라
+   0.06배 감속 상태에서도 인지되지 않았다(UX 검증). 색까지 함께 흔든다. */
+@keyframes qty-bump {
+  0% {
+    transform: scale(1.7);
+    color: var(--color-orange-400);
+  }
+  60% {
+    color: var(--color-orange-400);
+  }
+  100% {
+    transform: scale(1);
+    color: inherit;
+  }
+}
+
+.animate-qty-bump {
+  animation: qty-bump 280ms cubic-bezier(0.4, 0, 0.2, 1);
+}
