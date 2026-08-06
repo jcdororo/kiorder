@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
+import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
   ShoppingCart,
   Plus,
@@ -9,6 +11,7 @@ import {
   Bell,
   CheckCircle,
   Receipt,
+  Loader2,
 } from "lucide-react";
 import { MenuItem } from "@/types/menu";
 import { CartItem } from "@/types/order";
@@ -46,6 +49,36 @@ export default function Page() {
     done(id);
     setLanded((n) => n + 1);
   };
+
+  // 이전에는 onClick에서 직접 await 하느라 진행 중 상태가 없었다.
+  // 응답이 오기 전에 다시 누르면 같은 주문이 그대로 한 번 더 들어갔다(실사용 QA에서 발견).
+  // useMutation으로 바꿔 isPending으로 버튼을 잠그고, 프로젝트의 React Query 컨벤션에도 맞춘다.
+  const orderMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiFetch("/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tableId,
+          items: cart.map((item) => ({
+            menuItemId: item.id,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+          })),
+        }),
+      });
+      if (!res.ok) throw new Error(`주문 전송에 실패했습니다 (${res.status})`);
+    },
+    onSuccess: () => {
+      setCart([]);
+      setCountdown(10);
+      setShowOrderModal(true);
+      void refetchOrders();
+    },
+    onError: (error: Error) =>
+      toast.error(error.message || "주문에 실패했습니다"),
+  });
 
   const {
     menus,
@@ -436,29 +469,19 @@ export default function Page() {
                     </span>
                   </div>
                   <button
-                    disabled={cart.length === 0}
-                    onClick={async () => {
-                      await apiFetch("/orders", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          tableId,
-                          items: cart.map((item) => ({
-                            menuItemId: item.id,
-                            name: item.name,
-                            price: item.price,
-                            quantity: item.quantity,
-                          })),
-                        }),
-                      });
-                      setCart([]);
-                      setCountdown(10);
-                      setShowOrderModal(true);
-                      void refetchOrders();
-                    }}
+                    disabled={cart.length === 0 || orderMutation.isPending}
+                    onClick={() => orderMutation.mutate()}
                     className="w-full py-3 bg-orange-500 hover:bg-orange-600 disabled:bg-white/10 disabled:text-gray-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
                   >
-                    <ShoppingCart className="w-5 h-5" /> 주문하기
+                    {orderMutation.isPending ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" /> 주문 중...
+                      </>
+                    ) : (
+                      <>
+                        <ShoppingCart className="w-5 h-5" /> 주문하기
+                      </>
+                    )}
                   </button>
                 </div>
               </>
