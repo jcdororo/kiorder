@@ -8,6 +8,10 @@ import { toast } from "sonner";
 import { UtensilsCrossed } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 
+// 포트폴리오 공개 데모 계정. 열람자가 바로 들어와 볼 수 있도록 화면에 노출한다.
+const DEMO_EMAIL = "owner1@test.com";
+const DEMO_PASSWORD = "test1234";
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -49,6 +53,11 @@ export default function LoginPage() {
     loginMutation.mutate({ email, password });
   };
 
+  const fillDemoAccount = () => {
+    setEmail(DEMO_EMAIL);
+    setPassword(DEMO_PASSWORD);
+  };
+
   return (
     <div className="min-h-screen bg-zinc-950 flex">
       {/* 왼쪽 로그인 폼 */}
@@ -63,6 +72,31 @@ export default function LoginPage() {
         </div>
 
         <h1 className="text-3xl font-bold text-white mb-1">로그인</h1>
+
+        <div className="mt-5 mb-6 rounded-xl border border-zinc-700 bg-zinc-800/60 px-4 py-3">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-zinc-500 mb-2">
+            포트폴리오 테스트 계정
+          </p>
+          <div className="flex items-center justify-between gap-3">
+            <dl className="text-sm space-y-0.5">
+              <div className="flex gap-2">
+                <dt className="text-zinc-500 w-6">ID</dt>
+                <dd className="text-zinc-200 font-medium">{DEMO_EMAIL}</dd>
+              </div>
+              <div className="flex gap-2">
+                <dt className="text-zinc-500 w-6">PW</dt>
+                <dd className="text-zinc-200 font-medium">{DEMO_PASSWORD}</dd>
+              </div>
+            </dl>
+            <button
+              type="button"
+              onClick={fillDemoAccount}
+              className="shrink-0 rounded-lg border border-orange-500/40 bg-orange-500/10 px-3 py-2 text-xs font-semibold text-orange-400 transition-colors hover:bg-orange-500/20 active:scale-95"
+            >
+              자동 입력
+            </button>
+          </div>
+        </div>
 
         <form onSubmit={handleLogin} className="space-y-5">
           <div className="space-y-1.5">
