@@ -4,9 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Plus, Minus, ShoppingCart, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, readErrorMessage } from "@/lib/api";
 import { AdminMenuItem } from "@/types/menu";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 type Table = { id: string; number: number };
 type CartItem = { id: string; name: string; price: number; quantity: number };
@@ -54,9 +55,18 @@ export default function Page() {
           })),
         }),
       });
-      if (!res.ok) throw new Error();
+      // 서버 검증(품절·수량 상한)이 켜지면서 여기로 400이 실제로 온다.
+      // 빈 Error를 던지면 버튼만 "처리 중..." → 원상복귀하고 아무 안내가 없어서
+      // 직원 입장에선 주문이 그냥 안 눌리는 것처럼 보였다.
+      if (!res.ok) {
+        throw new Error(
+          await readErrorMessage(res, `주문 등록에 실패했습니다 (${res.status})`),
+        );
+      }
     },
     onSuccess: () => router.push("/hall/orders"),
+    onError: (error: Error) =>
+      toast.error(error.message || "주문 등록에 실패했습니다"),
   });
 
   const categories = ["전체", ...Array.from(new Set(menus.map((m) => m.category)))];

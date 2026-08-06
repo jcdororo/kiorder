@@ -95,7 +95,10 @@ export default function Page() {
                     <button
                       key={table.id}
                       onClick={() => setSelectedTable(table)}
-                      className={`aspect-square rounded-xl flex flex-col items-center justify-center transition-all ${
+                      // 결제 PATCH가 도는 중 다른 테이블을 고르면 성공 화면이
+                      // 실제 결제된 테이블이 아니라 새로 고른 번호를 알린다.
+                      disabled={paymentMutation.isPending}
+                      className={`aspect-square rounded-xl flex flex-col items-center justify-center transition-all disabled:cursor-not-allowed ${
                         isSelected
                           ? "bg-orange-500 text-white scale-105 shadow-lg shadow-orange-500/20"
                           : active
@@ -187,7 +190,10 @@ export default function Page() {
                     <div className="grid grid-cols-2 gap-3">
                       <button
                         onClick={() => setSelectedTable(null)}
-                        className="py-3.5 bg-transparent border border-white/20 hover:bg-white/10 text-gray-300 hover:text-white rounded-xl flex items-center justify-center gap-2 text-sm font-medium transition-colors"
+                        // 선택 해제도 같은 이유로 결제 중엔 막는다(성공 화면의
+                        // 테이블 번호가 비어버린다).
+                        disabled={paymentMutation.isPending}
+                        className="py-3.5 bg-transparent border border-white/20 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed text-gray-300 hover:text-white rounded-xl flex items-center justify-center gap-2 text-sm font-medium transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
                         테이블 정리
