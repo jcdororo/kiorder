@@ -7,3 +7,5 @@ backend/dist/
 docs/*
 !docs/images/
 구상.txt
+_workspace/
+_workspace_*/
