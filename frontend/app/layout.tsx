@@ -21,6 +21,10 @@ export const metadata: Metadata = {
   },
   description:
     "테이블오더 · 키오스크 웨이팅 · 주방/홀/POS 실시간 관리를 하나로 묶은 식당 통합 주문 플랫폼",
+  // 모바일 브라우저(삼성 인터넷 등)가 화면의 전화번호를 자동으로 tel: 링크로 바꾼다.
+  // 웨이팅 등록 화면에서 손님 번호를 누르면 전화가 걸리는 문제라, 마크업이 아니라
+  // 여기서 자동 감지 자체를 끈다.
+  formatDetection: { telephone: false },
 };
 
 export default function RootLayout({
