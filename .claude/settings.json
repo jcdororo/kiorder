@@ -19,5 +19,8 @@
     "additionalDirectories": [
       "C:\\Users\\wnwlc\\.claude"
     ]
+  },
+  "enabledPlugins": {
+    "harness@harness-marketplace": true
   }
 }
