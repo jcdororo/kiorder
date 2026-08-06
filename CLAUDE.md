@@ -11,13 +11,6 @@
 
 - 전체 코드 금지 → **바뀌는 부분만** 간략하게 + 변경 이유 함께 설명
 
-## 인사 시 자동 브리핑 (CRITICAL)
-
-사용자가 "안녕 클로드" 등 인사말로 시작하면:
-1. 메모리 파일 읽기 (`memory/project_frontend_migration.md`, `memory/project_backend_setup.md`)
-2. "지난번엔 ~까지 했고, 오늘은 ~부터 시작하면 됩니다" 형식으로 브리핑
-3. 사용자가 먼저 물어보지 않아도 자동 수행
-
 ## 작업 우선순위 (CRITICAL)
 
 - **메인 작업은 프론트엔드** — 백엔드는 프론트 연동을 위한 수단
@@ -34,76 +27,23 @@
 - 인증: HttpOnly 쿠키 + jose jwtVerify (proxy.ts)
 - Role: `SYSTEM_ADMIN` → `/system-admin/stores`, `STORE_OWNER` → `/owner/dashboard`
 - 디자인 시스템(다크 테마 컬러·컴포넌트 규칙): 프론트 UI 작업 시 `DESIGN.md` 참고
-- **학습 모드 전환(2026-08-04)**: 완성된 포트폴리오보다 "AI로 팀을 꾸려 워크플로우를 배우는 것"이 목표. 로컬 `docs/roadmap.md`에 3단계(단일 에이전트→서브에이전트 팀→Orca 병렬) 로드맵 정의. 현재 1단계 실전 과제 완료, 2단계(`.claude/agents/` 역할 분업) 착수 중
-- **팀 파이프라인(하네스)**: 규모 있는 작업은 `.claude/skills/kiorder-flow/SKILL.md`의 절차를 따른다 — 기획(`product-planner`) → 사람 판단 → 구현(`frontend-dev`) → 병렬 검증(`code-reviewer` ∥ `ux-reviewer`) → 사람 판단 → 반영·테스트. 각 역할은 `.claude/agents/memory/{역할}.md`에 경험을 누적한다. 작은 작업까지 파이프라인을 태우지 말 것(비용 가드는 SKILL.md 참고)
 
-## 현재 진행 상황
+> 이 문서에는 **규칙만** 적는다. 진행 상황·완료 이력·다음 할 일 같은 **상태는 적지 않는다**
+> — `git log`와 세션 메모리가 기준이다. (두 곳에 적으면 반드시 한쪽이 낡는다)
 
-### 완료
-- 프론트엔드 16개 페이지 이식 완료 (mock 데이터)
-- 백엔드 Auth + Store 모듈 완료
-- HttpOnly 쿠키 인증, Route Guard(proxy.ts) 완료
-- 로그아웃 기능 완료
-- `/unauthorized` 페이지, 메인 페이지 email 표시
-- Menu 백엔드 모듈 + 프론트 연동 완료 (react-hook-form + zod 검증 포함)
-- auth/store/menu 전체 DTO 적용, ValidationPipe 전역 등록
-- Order 모듈 완료 (POST/GET/PATCH)
-- Supabase Realtime 연동 완료 (주방 페이지 실시간 주문 수신)
-- Table 모듈 완료, 테이블오더 `[tableId]/menu` 라우트 완료
-- WaitingEntry 백엔드 모듈 완료 (4개 엔드포인트)
-- `/kiosk/waiting` + `/kiosk/complete` 프론트 연동 완료 (QR코드 포함)
-- `/waiting/[waitingId]` 손님용 대기현황 페이지 완료 (15초 자동갱신, QR 연동, 앞 팀 수 표시)
-  - 라우트 정리: `/waiting/status/[waitingId]` → `/waiting/[waitingId]` (status 폴더 제거)
-- `/owner/waiting` 연동 완료 (다크 UI, Realtime, 정렬+취소선 처리)
-- `/kiosk/complete` 태블릿 가로 레이아웃 완료
-- `/owner/menu` 다크 UI 완료
-- `waiting-entry.service.ts` `findOne` — `ahead` 집계 추가
-- README.md 작성 완료, `docs/readme` 브랜치 PR 생성
-- `kiosk/display` 페이지 제거 (손님 대기현황 QR 페이지로 대체)
-- `proxy.ts` 개선
-  - `/table-order`, `/kitchen`, `/kiosk`, `/pos` STORE_OWNER 전용으로 보호 추가
-  - `/login` 접근 시 role 기반 redirect (SYSTEM_ADMIN → /system-admin/stores)
-  - `SECRET` 모듈 상단 상수화, JWT_SECRET 누락 시 startup 에러 처리
-- `/owner/waiting` 반응형 레이아웃 완료 (모바일 카드 / 태블릿 아이콘 사이드바)
-- `/owner/menu` 반응형 레이아웃 완료 (모바일 카드 / 태블릿 아이콘 사이드바)
-- `MenuItem.type (FOOD/DRINK/SERVICE)` 마이그레이션 + 메뉴 관리 UI 완료
-- `/kitchen/orders` 전체 아이템 표시 + hallReceived 토글 (주방/홀 양쪽 클릭 가능)
-- `/hall/orders` 신규 완료 (칸반, hallReceived, Realtime storeId 필터)
-- `/hall/order` 신규 완료 (홀 직원용 주문 입력 — 테이블 드롭다운 + 메뉴 + 장바구니)
-- 테이블오더 직원호출 탭 완료 (SERVICE 메뉴, 수량선택 - 0 +, 하단 주문 버튼)
-- `Order.hallReceived` 마이그레이션 + `PATCH /orders/:id/hall-receive` 엔드포인트
-- Supabase Realtime storeId 필터 적용 (매장별 이벤트 격리)
-- 홀 완료 버튼 validation (hallReceived 없으면 비활성)
-- 배포 로그인/로그아웃 후 페이지 이동 안 되는 버그 해결 (router.push → window.location.href, 커밋 `4d3125e`)
-- (2026-08-04) `owner/menu/page.tsx` 컴포넌트 분리 — `OwnerSidebar`/`MenuFormDialog`/`MenuTable` 추출, 565→114줄 (`owner/waiting`도 사이드바 공유로 455→411줄). tsc·Playwright 검증 완료, **아직 미커밋**
-- (2026-08-04) `.claude/agents/frontend-dev.md`·`code-reviewer.md`·`test-writer.md` 역할 정의 생성. **주의**: 같은 세션 안에서 만든 커스텀 서브에이전트는 하네스가 세션 시작 시 1회만 읽어서 바로 호출 불가 — 다음 세션(재시작)부터 인식됨. **스킬(`.claude/skills/`)은 반대로 만들자마자 즉시 인식됨**
-- (2026-08-05) 하네스 구축 — `.claude/skills/kiorder-flow/SKILL.md`(팀 파이프라인 절차 + 비용 가드), `.claude/agents/memory/*.md`(역할별 누적 경험치), `product-planner`·`ux-reviewer` 역할 추가. 커밋 `e5ce361`
-- (2026-08-05) 파이프라인 1회차 실전 — UX 지적 16건 중 6건 수정(메뉴 정렬 `orderBy`, 삭제 확인 다이얼로그, 대기시간 포맷, 평균값 실계산 전환, 기본 카테고리, 스위치 색). 커밋 `0b49197`
-- (2026-08-05) `BackToTour` 공유 컴포넌트로 9개 화면 홈 버튼 통일 → 랜딩 `#screens`로 이동. 커밋 `3308f4f`. **매장 관리 화면만 육안 검증 못 함**(SYSTEM_ADMIN 계정 없음)
+### 프로젝트 목표 — 학습 모드
 
-> ⚠️ 아래 "다음 할 일"은 CEO 로드맵(포트폴리오 완성 목표) 기준으로 작성된 이후 오래 갱신되지 않음 — 실제로는 POS/훅 3개/컴포넌트 분리/타입 분리/로딩·에러 처리 등 상당수 항목이 이미 완료됨(자세한 최신 상태는 memory `project_frontend_migration.md` 참고). 지금은 위 "학습 모드 전환"이 우선이라 이 목록은 정리가 밀려있는 상태.
+완성된 포트폴리오보다 **"AI로 팀을 꾸려 워크플로우를 배우는 것"**이 목표다.
+로컬 `docs/roadmap.md`에 3단계(단일 에이전트 → 서브에이전트 팀 → Orca 병렬) 로드맵을 정의해 두었다.
 
-### 다음 할 일 (우선순위 순, 일부 stale)
+### 팀 파이프라인 (하네스)
 
-#### P1 — 포트폴리오 완성
-- **커스텀 훅 나머지 2개** (CEO 로드맵 Week 1) — `useOwnerMenu()`, `usePosOrders()` ← 다음 작업
-- **POS 화면 구현** (A안 — 고정 그리드 플로어맵)
-  - 백엔드: `GET /orders`에 tableId 필터 + `결제완료` 상태 추가
-  - 프론트: 다크 테마 + 실제 API 연동 + Supabase Realtime
-  - 결제 버튼 → PATCH 결제완료 → 테이블 비워짐
-- **error.tsx / loading.tsx** 추가
-- **table-order 주문 완료 모달** (10초 자동 종료)
-- 배포 (Vercel) ← 가장 나중에
+규모 있는 작업은 `.claude/skills/kiorder-flow/SKILL.md`의 절차를 따른다.
 
-#### P2 — 완성도 다듬기
-- 컴포넌트 분리 (클린코드)
-- 로딩 스켈레톤 + 에러 토스트 통일
-- 백엔드 / 프론트 코드 전체 이해 (면접 대비)
+기획(`product-planner`) → **사람 판단** → 구현(`frontend-dev`) → 병렬 검증(`code-reviewer` ∥ `ux-reviewer`) → **사람 판단** → 반영·테스트
 
-#### P3 — 선택 / 내실 다지기
-- README GIF 추가
-- 이력서 / PPT 작성
-- 대시보드 통계 연동, 주문 알림음, 테이블 설정 저장, 웨이팅 마감 ON/OFF
+- 각 역할은 `.claude/agents/memory/{역할}.md`에 경험을 누적한다 (시작 시 읽고, 끝날 때 갱신)
+- 작은 작업까지 파이프라인을 태우지 말 것 — 비용 가드 규칙은 SKILL.md 참고
 
 ## 커밋 메시지 규칙 (CRITICAL — 커밋 작성 시 반드시 적용)
 
@@ -162,3 +102,5 @@ Gitmoji + Conventional Commits 혼합 형식을 따른다.
 - Prisma 7: `prisma.config.ts` + `@prisma/adapter-pg` 방식 (schema.prisma에 url 없음)
 - JWT 365일 만료 (키오스크 특성상 401 처리 스킵)
 - `import 'dotenv/config'`은 `main.ts` 최상단 필수
+- `.claude/agents/*.md`는 **세션 시작 시 1회만 로드** → 새 역할을 만들면 세션을 재시작해야 호출 가능.
+  반면 `.claude/skills/`는 만들자마자 즉시 인식된다
