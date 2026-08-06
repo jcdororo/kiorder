@@ -205,7 +205,7 @@ export default function Page() {
 
       {/* 메뉴 주문 탭 */}
       {activeTab === "menu" && (
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-1 overflow-hidden animate-in fade-in duration-200">
           {/* 카테고리 사이드바 */}
           <aside className="w-24 shrink-0 bg-[#1a2232] flex flex-col items-center py-4 gap-2 overflow-y-auto border-r border-white/10">
             {categories.map((cat) => (
@@ -261,7 +261,7 @@ export default function Page() {
                         </p>
                         <button
                           onClick={() => addToCart(menu)}
-                          className="mt-2 w-full py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm flex items-center justify-center gap-1 transition-colors"
+                          className="mt-2 w-full py-1.5 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white rounded-lg text-sm flex items-center justify-center gap-1 transition-all duration-150"
                         >
                           <Plus className="w-3.5 h-3.5" /> 담기
                         </button>
@@ -483,7 +483,7 @@ export default function Page() {
 
       {/* 직원 호출 탭 */}
       {activeTab === "service" && (
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-hidden animate-in fade-in duration-200">
           {serviceMenus.length === 0 ? (
             <div className="flex flex-col items-center justify-center flex-1 text-gray-600">
               <Bell className="w-12 h-12 mb-3 opacity-30" />
@@ -572,8 +572,8 @@ export default function Page() {
 
       {/* 주문 완료 모달 */}
       {showOrderModal && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center">
-          <div className="bg-[#1f2937] border border-white/10 rounded-2xl px-10 py-10 flex flex-col items-center gap-4 shadow-2xl">
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center animate-in fade-in duration-200">
+          <div className="bg-[#1f2937] border border-white/10 rounded-2xl px-10 py-10 flex flex-col items-center gap-4 shadow-2xl animate-in fade-in zoom-in-95 duration-300">
             <CheckCircle className="w-16 h-16 text-green-400" />
             <p className="text-white text-xl font-bold">
               주문이 완료되었습니다!
