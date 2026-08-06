@@ -36,6 +36,9 @@ export default function Page() {
   const [cartView, setCartView] = useState<"cart" | "receipt">("cart");
   const mainRef = useRef<HTMLElement>(null);
   const isScrollingRef = useRef(false);
+  // md 미만에서 카테고리 레일이 가로 칩 줄이 된다. 세로 레일과 달리 활성 칩이
+  // 스크롤 밖으로 밀려날 수 있어, 활성 항목을 시야로 끌어오기 위한 ref 맵.
+  const chipRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   // 비행 도착점. 배지는 totalItems > 0일 때만 렌더되어 첫 담기 시점에 존재하지 않으므로,
   // 항상 존재하는 장바구니 탭 버튼을 목표로 삼는다.
   const cartTabRef = useRef<HTMLButtonElement>(null);
@@ -256,6 +259,18 @@ export default function Page() {
     return () => observer.disconnect();
   }, [grouped]);
 
+  // 활성 칩을 시야로 끌어온다. 탭으로 바꿨든 스크롤(IntersectionObserver)로 바뀌었든
+  // 경로가 같으므로 activeCategory 한 곳만 본다.
+  // block: "nearest"가 없으면 세로 축까지 정렬하려 들어 페이지가 튄다.
+  // setState가 아닌 DOM 부수효과라 set-state-in-effect 룰 대상이 아니다.
+  useEffect(() => {
+    chipRefs.current[activeCategory]?.scrollIntoView({
+      behavior: "smooth",
+      inline: "center",
+      block: "nearest",
+    });
+  }, [activeCategory]);
+
   const totalAmount = cart.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0,
@@ -297,14 +312,17 @@ export default function Page() {
 
       {/* 메뉴 주문 탭 */}
       {activeTab === "menu" && (
-        <div className="flex flex-1 overflow-hidden animate-in fade-in duration-200">
-          {/* 카테고리 사이드바 */}
-          <aside className="w-24 shrink-0 bg-[#1a2232] flex flex-col items-center py-4 gap-2 overflow-y-auto border-r border-white/10">
+        <div className="flex flex-col md:flex-row flex-1 overflow-hidden animate-in fade-in duration-200">
+          {/* 카테고리 사이드바 (md 미만에서는 가로 스크롤 칩 줄) */}
+          <aside className="w-full md:w-24 shrink-0 bg-[#1a2232] flex flex-row md:flex-col items-center px-4 py-2 md:px-0 md:py-4 gap-2 overflow-x-auto overflow-y-hidden md:overflow-y-auto max-md:[&::-webkit-scrollbar]:hidden max-md:[scrollbar-width:none] border-b md:border-b-0 md:border-r border-white/10">
             {categories.map((cat) => (
               <button
                 key={cat}
+                ref={(el) => {
+                  chipRefs.current[cat] = el;
+                }}
                 onClick={() => scrollToCategory(cat)}
-                className={`w-16 py-3 rounded-xl text-sm font-medium transition-colors text-center ${
+                className={`shrink-0 md:shrink w-auto md:w-16 px-4 md:px-0 py-2 md:py-3 max-md:whitespace-nowrap rounded-xl text-sm font-medium transition-colors text-center ${
                   activeCategory === cat
                     ? "bg-orange-500 text-white"
                     : "text-gray-400 hover:text-white hover:bg-white/10"
@@ -372,13 +390,13 @@ export default function Page() {
           </main>
 
           {/* 장바구니 / 주문 내역 패널 */}
-          <aside className="w-1/4 shrink-0 bg-[#1f2937] border-l border-white/10 flex flex-col">
+          <aside className="w-full md:w-1/4 h-2/5 md:h-auto shrink-0 bg-[#1f2937] border-t md:border-t-0 md:border-l border-white/10 flex flex-col">
             {/* 토글 태그 */}
             <div className="px-4 py-3 border-b border-white/10 flex gap-2">
               <button
                 ref={cartTabRef}
                 onClick={() => setCartView("cart")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
                   cartView === "cart"
                     ? "bg-orange-500 text-white"
                     : "bg-white/5 text-gray-400 hover:text-white"
@@ -401,7 +419,7 @@ export default function Page() {
               </button>
               <button
                 onClick={() => setCartView("receipt")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
                   cartView === "receipt"
                     ? "bg-orange-500 text-white"
                     : "bg-white/5 text-gray-400 hover:text-white"
