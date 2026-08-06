@@ -53,6 +53,11 @@
 | 2026-08-06 | reviewer 역할 축소 — 타입·린트·빌드 검사 제외 | agents/kiorder-reviewer.md | CI가 자동 판정하므로 중복 |
 | 2026-08-06 | `kiorder-context` 공유 스킬 신설 | skills | 에이전트마다 같은 컨벤션을 재탐색하던 비용 제거 |
 | 2026-08-06 | `kiorder-backend` 추가 | agents | 1세대엔 없어 백엔드 변경을 매번 직접 처리 |
+| 2026-08-06 | 외부 스킬 9개 설치 (`emilkowalski/skills`) | `.agents/` (미추적) | UI 폴리시·모션 크래프트 보강. 내용은 `skills-lock.json`으로만 재현 |
+
+> ⚠️ 위 외부 스킬 중 `review-animations`·`improve-animations`는 `kiorder-ux`와 역할이 겹친다
+> (전자는 코드로 모션 품질, 후자는 스크린샷으로 화면). 둘 다 트리거되면 비용이 두 배이므로,
+> 파이프라인을 한 번 돌려본 뒤 경계를 정리할 것.
 
 ## 브랜치 / PR 규칙
 
