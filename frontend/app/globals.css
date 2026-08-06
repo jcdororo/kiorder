@@ -169,3 +169,80 @@
 .animate-qty-bump {
   animation: qty-bump 280ms cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+/* 웨이팅 대기번호 화면 등장.
+   손님이 이 서비스에서 딱 한 번 겪는 순간이라(등록 완료 → 내 번호 확인)
+   자주 쓰는 동작보다 정성을 더 들이는 쪽이 맞다. 반대로 키오스크는
+   뒤에 줄이 서 있고 15초 뒤 자동으로 넘어가므로 전체를 700ms 안에 끝낸다.
+
+   서버 컴포넌트(searchParams로 대기 정보를 가져온다)라 JS를 쓰지 않고
+   animation-delay만으로 순서를 만든다. delay 동안 요소가 보이면 안 되므로
+   both으로 채운다. */
+@keyframes kiosk-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 번호 카드만 스케일로 들어온다 — 이 화면의 주인공이고,
+   위로 올라오는 다른 요소들과 움직임이 겹치지 않아 시선이 갈린다. */
+@keyframes kiosk-number-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* 체크 아이콘은 살짝 넘겼다 돌아온다(가장 먼저 나오는 신호라 확인감이 필요). */
+@keyframes kiosk-check-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-kiosk-check {
+  animation: kiosk-check-pop 380ms cubic-bezier(0.34, 1.3, 0.64, 1) both;
+}
+
+.animate-kiosk-title {
+  animation: kiosk-rise 320ms cubic-bezier(0.4, 0, 0.2, 1) 140ms both;
+}
+
+.animate-kiosk-number {
+  animation: kiosk-number-in 420ms cubic-bezier(0.34, 1.2, 0.64, 1) 260ms both;
+}
+
+.animate-kiosk-qr {
+  animation: kiosk-rise 320ms cubic-bezier(0.4, 0, 0.2, 1) 460ms both;
+}
+
+/* 화면 전체가 움직이는 등장이라 WCAG 2.3.3 기준으로 가드를 둔다.
+   숨기지 않고 제자리에 즉시 띄운다 — 정보를 못 보게 만들면 안 된다. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-kiosk-check,
+  .animate-kiosk-title,
+  .animate-kiosk-number,
+  .animate-kiosk-qr {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
