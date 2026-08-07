@@ -109,7 +109,9 @@ export default function Page() {
       <div className="bg-[#1f2937] border-b border-white/10 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <BackToTour variant="icon" />
+            {/* 우측 헤더 내용이 많아 shrink-0이 없으면 390 이하에서
+                "홈으로"가 세로로 접힌다(대시보드와 같은 조건). */}
+            <BackToTour className="shrink-0" />
             <div>
               <h1 className="text-xl font-bold text-white leading-none">홀 화면</h1>
               <p className="text-sm text-gray-400 mt-0.5">

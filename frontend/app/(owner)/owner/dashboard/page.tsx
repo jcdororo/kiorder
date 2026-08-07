@@ -142,7 +142,9 @@ export default function Page() {
         {/* 헤더 */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
-            <BackToTour variant="icon" />
+            {/* shrink-0이 없으면 390 이하에서 이 링크가 flex 아이템으로 압축돼
+                "홈으로"가 세로로 접힌다. 눌리는 쪽을 제목 블록으로 넘긴다. */}
+            <BackToTour className="shrink-0" />
             <div className="flex items-center gap-3">
               <div className="bg-orange-500/10 p-2.5 rounded-xl">
                 <LayoutDashboard className="w-6 h-6 text-orange-400" />
