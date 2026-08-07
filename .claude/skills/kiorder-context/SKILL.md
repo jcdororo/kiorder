@@ -57,7 +57,7 @@ role은 `SYSTEM_ADMIN`, `STORE_OWNER` **두 개뿐**이다. 사장님 계정 하
 
 ## 이미 있는 것 — 새로 만들기 전에 확인하라
 
-**훅** (`frontend/hooks/`): `useTableMenu(tableId)` · `useOwnerMenu({onSaved})` · `usePosOrders({onPaid})`
+**훅** (`frontend/hooks/`): `useTableMenu(tableId)` · `useOwnerMenu({onSaved})` · `usePosOrders({onPaid})` · `useFlyToCart()` · `useIdle({idleMs,enabled,onWake})` · `useScreensaverContent()`
 > 설계 원칙: 훅은 서버 통신·파생값만, 페이지는 UI 오케스트레이션. 다이얼로그 닫기 같은 뒷정리는 훅에 박지 말고 콜백으로 페이지에 위임한다.
 
 **타입** (`frontend/types/`): `menu.ts` · `order.ts` · `store.ts` · `waiting.ts` (도메인별 분리 완료. 단일 `types.ts`는 삭제됨)
@@ -65,7 +65,9 @@ role은 `SYSTEM_ADMIN`, `STORE_OWNER` **두 개뿐**이다. 사장님 계정 하
 **컴포넌트** (`frontend/components/`)
 - `shared/` — `BackToTour`(홈 버튼, `variant="icon"` 지원) · `ErrorState`(onRetry) · `Skeleton` · `BoardSkeleton`(칸반 3열)
 - `owner/` — `OwnerSidebar`(menu·waiting 공유, `active` prop) · `MenuFormDialog` · `MenuTable` · `MenuCard` · `MenuTypeBadge` · `OrderStatusBadge` · `Tables`
-- `kitchen/OrderCard` · `hall/OrderCard` · `kiosk/QrCode` · `kiosk/KioskCompleteCountdown`
+- `kitchen/OrderCard` · `hall/OrderCard` · `kiosk/QrCode` · `kiosk/KioskCompleteCountdown` · `kiosk/TabletFrame`
+- `table-order/` — `CartSheet`(+`CartPanel`) · `FlyingThumb`
+- `screensaver/Screensaver`(유휴 시 광고 오버레이. 키오스크 웨이팅 60초·테이블오더 180초) · `screensaver/ScreensaverDeck`
 - `components/ui/` — shadcn/ui. 미사용 34개는 이미 정리됨
 
 **디자인 토큰**: 다크 테마. 색·간격 규칙은 루트 `DESIGN.md`(296줄)를 Read해서 확인한다. 이 문서에 복사해두지 않는 이유는 원본이 갱신되면 사본이 낡기 때문이다.
@@ -77,7 +79,7 @@ role은 `SYSTEM_ADMIN`, `STORE_OWNER` **두 개뿐**이다. 사장님 계정 하
 | auth | `POST /auth/register` `POST /auth/login` `POST /auth/logout` |
 | menu | `GET /menu` `POST /menu` `PATCH /menu/:id` `DELETE /menu/:id` |
 | order | `POST /orders` `GET /orders`(`?tableId=`) `PATCH /orders/:id/status` `PATCH /orders/:id/hall-receive` |
-| store | `GET /store/my` `GET /store` `POST /store` |
+| store | `GET /stores/my` `GET /stores` `POST /stores` |
 | table | `GET /tables` |
 | waiting | `POST /waiting` `GET /waiting` `GET /waiting/status/:id` `PATCH /waiting/:id/status` `PATCH /waiting/:id/guest-response` |
 

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Users, Phone } from "lucide-react";
 import { BackToTour } from "@/components/shared/BackToTour";
 import { TabletFrame } from "@/components/kiosk/TabletFrame";
+import { Screensaver } from "@/components/screensaver/Screensaver";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api";
 import { useMutation } from "@tanstack/react-query";
@@ -64,6 +65,15 @@ export default function Page() {
     setPartySize(partySize - 1);
   };
 
+  /* 60초 유휴는 사실상 "앞 손님이 등록을 포기하고 떠났다"는 뜻이다.
+     그대로 두면 다음 손님이 화면을 깨웠을 때 남의 전화번호가 그대로 떠 있다
+     — 개인정보 노출이자 오등록 경로다. 테이블오더가 장바구니를 지키는 것과
+     정반대로 가는 이유는, 이쪽 손님은 한 번 쓰고 떠나는 사람이기 때문이다. */
+  const resetForm = () => {
+    setPartySize(0);
+    setPhoneNumber("");
+  };
+
   /* 세로에선 카드 위, 가로에선 왼쪽 컬럼 안 — 위치만 다르고 내용은 같아서 한 번만 정의한다 */
   const header = (
     <div className="text-center">
@@ -78,7 +88,7 @@ export default function Page() {
   return (
     <TabletFrame>
       {/* 가로에선 세로 가운데 정렬 — 거치형 태블릿은 화면이 남아서 위로 붙이면 아래가 비어 보인다 */}
-      <div className="min-h-screen xl:pointer-fine:min-h-full bg-linear-to-b from-gray-950 to-gray-900 p-6 lg:flex lg:items-center lg:justify-center">
+      <div className="relative min-h-screen xl:pointer-fine:min-h-full bg-linear-to-b from-gray-950 to-gray-900 p-6 lg:flex lg:items-center lg:justify-center">
         <div className="w-full max-w-2xl lg:max-w-5xl mx-auto">
           {/* 프레임이 씌워질 땐 프레임 바깥의 것을 쓴다 (TabletFrame 참고) */}
           <div className="mb-6 xl:pointer-fine:hidden">
@@ -172,6 +182,17 @@ export default function Page() {
             </div>
           </div>
         </div>
+
+        {/* fixed가 아니라 absolute인 이유: 데스크톱에서는 TabletFrame이 베젤과
+            기기 배지를 그리는데, 뷰포트 전체를 덮으면 "태블릿이 아니라 브라우저가
+            광고판"이 된다. 이 div는 프레임의 화면 영역 안이라 모서리도
+            조상의 rounded-2xl에 잘린다. 절대 위치라 lg:flex 배치에도 끼지 않는다. */}
+        <Screensaver
+          idleMs={60_000}
+          enabled={!submitMutation.isPending}
+          onWake={resetForm}
+          className="absolute z-40 rounded-2xl"
+        />
       </div>
     </TabletFrame>
   );

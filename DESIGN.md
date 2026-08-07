@@ -298,4 +298,14 @@ components:
     backgroundColor: "{colors.surface-page}"
     textColor: "{colors.text-primary}"
     minHeight: 100vh
+  screensaver:
+    backgroundColor: "{colors.canvas}"
+    zIndex: 60
+    transition: opacity 200ms
+    note: 유휴 시간에 화면을 덮는 광고 슬라이드. 정의상 가장 위의 표면이라 모달·시트보다 엄격히 높은 층을 쓴다
+zIndex:
+  note: 같은 층에 두면 DOM 순서가 승패를 가른다. 새 표면은 이 표를 보고 층을 정한다
+  40: 모달 백드롭 · 모바일 장바구니 시트
+  50: 사이드바 · 모달 본체 · 주문 완료 모달 · 장바구니로 날아가는 썸네일
+  60: 화면보호기
 ---

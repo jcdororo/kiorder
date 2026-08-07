@@ -1,4 +1,7 @@
 import { useCallback, useRef, useState } from "react";
+// 화면보호기도 같은 판정이 필요해져 lib/motion.ts로 옮겼다.
+// 훅 마운트 시점이 아니라 fly() 호출 시점에 매번 확인하는 성질은 그대로다.
+import { prefersReducedMotion } from "@/lib/motion";
 
 export type Flight = {
   id: number;
@@ -6,14 +9,6 @@ export type Flight = {
   to: DOMRect;
   image?: string | null;
 };
-
-// SSR에는 window가 없고, 사용자가 OS 설정을 도중에 바꿀 수도 있으므로
-// 훅 마운트 시점이 아니라 fly() 호출 시점에 매번 확인한다.
-function prefersReducedMotion() {
-  if (typeof window === "undefined" || typeof window.matchMedia !== "function")
-    return false;
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-}
 
 export function useFlyToCart(): {
   flights: Flight[];
