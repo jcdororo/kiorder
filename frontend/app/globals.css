@@ -234,13 +234,35 @@
   animation: kiosk-rise 320ms cubic-bezier(0.4, 0, 0.2, 1) 460ms both;
 }
 
+/* 화면보호기 메뉴 사진의 느린 확대(Ken Burns).
+   광고가 몇 분씩 돌아가는데 사진이 완전히 정지해 있으면 화면이 꺼진 것처럼 보인다.
+
+   infinite alternate로 두고 재생/정지는 ScreensaverDeck이 슬라이드별로 토글한다.
+   슬라이드를 전부 마운트해 놓고 opacity만 바꾸는 구조라, 유한 애니메이션이면
+   보이지도 않는 동안 다 끝나버린다. 클래스를 붙였다 떼는 방식도 쓸 수 없다 —
+   700ms 크로스페이드 도중 아직 보이는 이전 슬라이드가 scale(1)로 튄다. */
+@keyframes screensaver-kenburns {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.06);
+  }
+}
+
+.animate-screensaver-kenburns {
+  animation: screensaver-kenburns 24s cubic-bezier(0.4, 0, 0.2, 1) infinite
+    alternate;
+}
+
 /* 화면 전체가 움직이는 등장이라 WCAG 2.3.3 기준으로 가드를 둔다.
    숨기지 않고 제자리에 즉시 띄운다 — 정보를 못 보게 만들면 안 된다. */
 @media (prefers-reduced-motion: reduce) {
   .animate-kiosk-check,
   .animate-kiosk-title,
   .animate-kiosk-number,
-  .animate-kiosk-qr {
+  .animate-kiosk-qr,
+  .animate-screensaver-kenburns {
     animation: none;
     opacity: 1;
     transform: none;

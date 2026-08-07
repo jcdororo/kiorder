@@ -12,6 +12,7 @@ import Image from "next/image";
 import { useTableMenu } from "@/hooks/useTableMenu";
 import { useFlyToCart } from "@/hooks/useFlyToCart";
 import FlyingThumb from "@/components/table-order/FlyingThumb";
+import { Screensaver } from "@/components/screensaver/Screensaver";
 import CartSheet, {
   CartPanel,
   type CartView,
@@ -615,6 +616,19 @@ export default function Page() {
           </div>
         </div>
       )}
+
+      {/* 화면보호기. 오버레이일 뿐 이 페이지를 언마운트하지 않으므로
+          cart·activeCategory·스크롤 위치가 그대로 남는다 — 손님이 자리를 비웠다
+          돌아왔을 때 담아둔 걸 잃지 않는 게 이 화면의 전제다.
+          z-[60]: 완료 모달·FlyingThumb과 같은 z-50에 두면 DOM 순서에 승패가 걸린다. */}
+      <Screensaver
+        idleMs={180_000}
+        enabled={!orderMutation.isPending && !showOrderModal}
+        footerNote={
+          totalItems > 0 ? `담아두신 ${totalItems}개는 그대로 있습니다` : undefined
+        }
+        className="fixed z-[60]"
+      />
     </div>
   );
 }
