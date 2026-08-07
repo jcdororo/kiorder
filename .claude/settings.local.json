@@ -3,7 +3,16 @@
     "allow": [
       "mcp__TalkToFigma__join_channel",
       "Bash(git merge *)",
-      "Bash(git pull *)"
+      "Bash(git pull *)",
+      "PowerShell(git *)",
+      "PowerShell(Set-Location C:\\\\study\\\\kiorder\\\\frontend; npx tsc --noEmit; Write-Output \"EXIT=$LASTEXITCODE\")",
+      "PowerShell($paths = @\\(\"C:\\\\Users\\\\wnwlc\\\\.claude\\\\settings.json\",\"C:\\\\study\\\\kiorder\\\\.claude\\\\settings.json\",\"C:\\\\study\\\\kiorder\\\\.claude\\\\settings.local.json\"\\); foreach \\($p in $paths\\) { if \\(Test-Path $p\\) { Write-Output \"=== $p ===\"; Get-Content $p } })",
+      "PowerShell(Set-Location C:\\\\study\\\\kiorder; $id = \\(gh run list --branch chore/remove-harness --limit 1 --json databaseId --jq '.[0].databaseId'\\); gh run watch $id --exit-status --interval 10 2>&1 | Select-Object -Last 12 | Out-String; Write-Output \"CI exit=$LASTEXITCODE\")",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\wnwlc\\\\.claude\\\\plugins\\\\cache\\\\harness-marketplace\\\\harness\\\\1.2.0\\\\skills\\\\harness\" -Recurse -File | Select-Object @{N=\"파일\";E={$_.FullName.Replace\\(\"C:\\\\Users\\\\wnwlc\\\\.claude\\\\plugins\\\\cache\\\\harness-marketplace\\\\harness\\\\1.2.0\\\\skills\\\\harness\\\\\",\"\"\\)}}, @{N=\"줄수\";E={\\(Get-Content $_.FullName | Measure-Object -Line\\).Lines}} | Format-Table -AutoSize)",
+      "PowerShell(gh api *)",
+      "PowerShell($r = gh api \"repos/vercel-labs/agent-skills/contents\" | ConvertFrom-Json; $r | ForEach-Object { \"{0,-6} {1}\" -f $_.type, $_.name })",
+      "PowerShell($r = gh api \"repos/vercel-labs/agent-skills/contents/skills\" | ConvertFrom-Json; $r | ForEach-Object { $_.name })",
+      "PowerShell(npx --yes skills@latest add --help 2>&1 | Out-String)"
     ]
   }
 }

@@ -4,15 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
-import {
-  ShoppingCart,
-  Plus,
-  Minus,
-  Bell,
-  CheckCircle,
-  Receipt,
-  Loader2,
-} from "lucide-react";
+import { Plus, Minus, Bell, CheckCircle, Receipt } from "lucide-react";
 import { MenuItem } from "@/types/menu";
 import { CartItem } from "@/types/order";
 import { apiFetch, readErrorMessage } from "@/lib/api";
@@ -20,6 +12,10 @@ import Image from "next/image";
 import { useTableMenu } from "@/hooks/useTableMenu";
 import { useFlyToCart } from "@/hooks/useFlyToCart";
 import FlyingThumb from "@/components/table-order/FlyingThumb";
+import CartSheet, {
+  CartPanel,
+  type CartView,
+} from "@/components/table-order/CartSheet";
 
 type Tab = "menu" | "service";
 
@@ -33,12 +29,22 @@ export default function Page() {
   const [serviceOrdered, setServiceOrdered] = useState(false);
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [countdown, setCountdown] = useState(10);
-  const [cartView, setCartView] = useState<"cart" | "receipt">("cart");
+  const [cartView, setCartView] = useState<CartView>("cart");
+  // cartView가 "무엇을 보여줄지", isCartOpen이 "표면을 띄울지"다. 둘은 직교한다.
+  // md 이상에서는 패널이 항상 열린 열이라 isCartOpen을 아예 읽지 않는다
+  // → 이 state가 어떤 값이든 데스크톱 동작은 변하지 않는다.
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
   const isScrollingRef = useRef(false);
+  // md 미만에서 카테고리 레일이 가로 칩 줄이 된다. 세로 레일과 달리 활성 칩이
+  // 스크롤 밖으로 밀려날 수 있어, 활성 항목을 시야로 끌어오기 위한 ref 맵.
+  const chipRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   // 비행 도착점. 배지는 totalItems > 0일 때만 렌더되어 첫 담기 시점에 존재하지 않으므로,
-  // 항상 존재하는 장바구니 탭 버튼을 목표로 삼는다.
+  // 항상 존재하는 장바구니 탭 버튼(데스크톱) / 하단 바(모바일)를 목표로 삼는다.
   const cartTabRef = useRef<HTMLButtonElement>(null);
+  // 모바일 목표는 하단 바 버튼 전체가 아니라 아이콘 + `총 N개`를 감싼 span이다.
+  // 버튼 중심(폭 250px)은 개수와 금액 사이의 빈 공간이라 착지 지점과 펌프가 어긋난다.
+  const cartBarRef = useRef<HTMLSpanElement>(null);
   const { flights, fly, done } = useFlyToCart();
   // 배지 펌프를 담기 시점이 아니라 "비행체가 도착한 시점"에 터뜨리기 위한 카운터.
   // totalItems를 key로 쓰면 비행체가 아직 출발 카드 위에 있을 때 이미 펌프가 끝나
@@ -80,6 +86,8 @@ export default function Page() {
     onSuccess: () => {
       setCart([]);
       setCountdown(10);
+      // 시트에서 주문했다면 완료 모달 뒤에 빈 장바구니가 남는다. 모달에 자리를 넘긴다.
+      setIsCartOpen(false);
       setShowOrderModal(true);
       void refetchOrders();
     },
@@ -152,6 +160,19 @@ export default function Page() {
     });
   };
 
+  // 장바구니 표면이 브레이크포인트마다 다르다. 두 후보가 동시에 DOM에 있고
+  // 한쪽은 display:none이라 getBoundingClientRect()가 전부 0으로 나온다.
+  // 0인 rect를 그대로 목표로 삼으면 썸네일이 화면 좌상단(0,0)으로 날아가므로,
+  // "지금 실제로 크기를 가진" 쪽을 고른다. 등록 시점이 아니라 호출 시점에 판정하므로
+  // 브라우저 창을 브레이크포인트 너머로 리사이즈해도 목표가 어긋나지 않는다.
+  const visibleCartRect = () => {
+    for (const el of [cartBarRef.current, cartTabRef.current]) {
+      const rect = el?.getBoundingClientRect();
+      if (rect && rect.width > 0 && rect.height > 0) return rect;
+    }
+    return null;
+  };
+
   // 메뉴 카드에서만 호출한다. 장바구니 안의 + 버튼은 이미 목적지에 있으므로 날릴 필요가 없다.
   const addFromCard = (
     e: React.MouseEvent<HTMLButtonElement>,
@@ -161,14 +182,10 @@ export default function Page() {
     const thumb = e.currentTarget
       .closest("[data-menu-card]")
       ?.querySelector("[data-menu-thumb]");
-    const target = cartTabRef.current;
+    const target = visibleCartRect();
     const flew =
       thumb && target
-        ? fly(
-            thumb.getBoundingClientRect(),
-            target.getBoundingClientRect(),
-            menu.image,
-          )
+        ? fly(thumb.getBoundingClientRect(), target, menu.image)
         : false;
     // 모션 최소화 설정이거나 좌표를 못 얻어 비행이 없으면 도착을 기다릴 수 없다.
     // 그 경우엔 배지 펌프를 즉시 발화시켜 피드백이 통째로 사라지지 않게 한다.
@@ -185,6 +202,11 @@ export default function Page() {
       return prev.filter((item) => item.id !== menuId);
     });
   };
+
+  // 장바구니 안의 + 는 이미 담긴 항목이므로 원본 메뉴를 되찾아 addToCart로 넘긴다.
+  // (패널을 컴포넌트로 뽑으면서 menus 배열까지 넘기지 않으려고 페이지에 남긴 어댑터)
+  const increaseCartItem = (item: CartItem) =>
+    addToCart(menus.find((m) => m.id === item.id)!);
 
   const updateServiceQty = (menuId: string, delta: number) => {
     setServiceCart((prev) => {
@@ -256,14 +278,33 @@ export default function Page() {
     return () => observer.disconnect();
   }, [grouped]);
 
+  // 활성 칩을 시야로 끌어온다. 탭으로 바꿨든 스크롤(IntersectionObserver)로 바뀌었든
+  // 경로가 같으므로 activeCategory 한 곳만 본다.
+  // block: "nearest"가 없으면 세로 축까지 정렬하려 들어 페이지가 튄다.
+  // setState가 아닌 DOM 부수효과라 set-state-in-effect 룰 대상이 아니다.
+  useEffect(() => {
+    // md 이상은 세로 레일이라 원본에 없던 동작이 된다. block: "nearest"가 세로 축에
+    // 걸려 카테고리가 많은 매장에서는 스크롤할 때마다 좌측 레일이 스스로 움직인다.
+    if (window.matchMedia("(min-width: 768px)").matches) return;
+    chipRefs.current[activeCategory]?.scrollIntoView({
+      behavior: "smooth",
+      inline: "center",
+      block: "nearest",
+    });
+  }, [activeCategory]);
+
   const totalAmount = cart.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0,
   );
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
+  // h-screen(=100vh)은 iOS Safari에서 툴바가 접힌 상태 기준이라 실제 가시 영역보다
+  // 60~115px 크다. 하단 바가 루트 flex-col의 마지막 행이고 루트가 overflow-hidden이라,
+  // 벗어나면 스크롤로 드러낼 수도 없다 — md 미만에서 장바구니에 도달하는 유일한 경로와
+  // 주문하기가 동시에 사라진다. dvh는 툴바가 펼쳐진 현재 높이를 쓴다.
   return (
-    <div className="h-screen flex flex-col bg-[#111827] text-white overflow-hidden">
+    <div className="h-dvh flex flex-col bg-[#111827] text-white overflow-hidden">
       {/* 헤더 */}
       <div className="shrink-0 px-6 py-4 bg-[#1f2937] border-b border-white/10">
         <h2 className="text-white m-0 text-lg font-semibold">테이블 주문</h2>
@@ -283,7 +324,13 @@ export default function Page() {
           메뉴 주문
         </button>
         <button
-          onClick={() => setActiveTab("service")}
+          // 시트가 열린 채 탭이 바뀌면 CartSheet는 언마운트되지만 isCartOpen은 true로
+          // 남아, 메뉴 탭으로 돌아왔을 때 시트가 열린 채 다시 뜬다. 스크림은 포인터만
+          // 막고 이 버튼은 여전히 포커스 가능해서 키보드로 실제 도달하는 경로다.
+          onClick={() => {
+            setActiveTab("service");
+            setIsCartOpen(false);
+          }}
           className={`flex-1 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
             activeTab === "service"
               ? "text-orange-400 border-b-2 border-orange-400"
@@ -297,14 +344,17 @@ export default function Page() {
 
       {/* 메뉴 주문 탭 */}
       {activeTab === "menu" && (
-        <div className="flex flex-1 overflow-hidden animate-in fade-in duration-200">
-          {/* 카테고리 사이드바 */}
-          <aside className="w-24 shrink-0 bg-[#1a2232] flex flex-col items-center py-4 gap-2 overflow-y-auto border-r border-white/10">
+        <div className="flex flex-col md:flex-row flex-1 overflow-hidden animate-in fade-in duration-200">
+          {/* 카테고리 사이드바 (md 미만에서는 가로 스크롤 칩 줄) */}
+          <aside className="w-full md:w-24 shrink-0 bg-[#1a2232] flex flex-row md:flex-col items-center px-4 py-2 md:px-0 md:py-4 gap-2 overflow-x-auto overflow-y-hidden md:overflow-y-auto max-md:[&::-webkit-scrollbar]:hidden max-md:[scrollbar-width:none] border-b md:border-b-0 md:border-r border-white/10">
             {categories.map((cat) => (
               <button
                 key={cat}
+                ref={(el) => {
+                  chipRefs.current[cat] = el;
+                }}
                 onClick={() => scrollToCategory(cat)}
-                className={`w-16 py-3 rounded-xl text-sm font-medium transition-colors text-center ${
+                className={`shrink-0 md:shrink w-auto md:w-16 px-4 md:px-0 py-2 md:py-3 max-md:whitespace-nowrap rounded-xl text-sm font-medium transition-colors text-center ${
                   activeCategory === cat
                     ? "bg-orange-500 text-white"
                     : "text-gray-400 hover:text-white hover:bg-white/10"
@@ -371,209 +421,62 @@ export default function Page() {
             ))}
           </main>
 
-          {/* 장바구니 / 주문 내역 패널 */}
-          <aside className="w-1/4 shrink-0 bg-[#1f2937] border-l border-white/10 flex flex-col">
-            {/* 토글 태그 */}
-            <div className="px-4 py-3 border-b border-white/10 flex gap-2">
-              <button
-                ref={cartTabRef}
-                onClick={() => setCartView("cart")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  cartView === "cart"
-                    ? "bg-orange-500 text-white"
-                    : "bg-white/5 text-gray-400 hover:text-white"
-                }`}
-              >
-                <ShoppingCart className="w-3.5 h-3.5" />
-                장바구니
-                {totalItems > 0 && (
-                  <span
-                    key={landed}
-                    className={`animate-in zoom-in-50 duration-200 text-[10px] rounded-full w-4 h-4 flex items-center justify-center leading-none ${
-                      cartView === "cart"
-                        ? "bg-white/25"
-                        : "bg-orange-500 text-white"
-                    }`}
-                  >
-                    {totalItems}
-                  </span>
-                )}
-              </button>
-              <button
-                onClick={() => setCartView("receipt")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  cartView === "receipt"
-                    ? "bg-orange-500 text-white"
-                    : "bg-white/5 text-gray-400 hover:text-white"
-                }`}
-              >
-                <Receipt className="w-3.5 h-3.5" />
-                주문 내역
-                {tableOrders.length > 0 && (
-                  <span
-                    className={`text-[10px] rounded-full w-4 h-4 flex items-center justify-center leading-none ${
-                      cartView === "receipt"
-                        ? "bg-white/25"
-                        : "bg-orange-500 text-white"
-                    }`}
-                  >
-                    {tableOrders.length}
-                  </span>
-                )}
-              </button>
-            </div>
-
-            {/* 장바구니 뷰 */}
-            {cartView === "cart" && (
-              <>
-                <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 [&::-webkit-scrollbar]:hidden">
-                  {cart.length === 0 ? (
-                    <p className="text-gray-400 text-center mt-10 text-sm">
-                      담긴 메뉴가 없습니다
-                    </p>
-                  ) : (
-                    cart.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center justify-between gap-2 animate-in slide-in-from-right-4 fade-in duration-200"
-                      >
-                        <div className="flex items-center gap-2 min-w-0">
-                          {/* {item.image ? (
-                            <Image src={item.image} alt={item.name} width={40} height={40} className="w-10 h-10 rounded-lg object-cover shrink-0" />
-                          ) : (
-                            <div className="w-10 h-10 rounded-lg bg-[#374151] flex items-center justify-center shrink-0">🍽️</div>
-                          )} */}
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium text-white truncate">
-                              {item.name}
-                            </p>
-                            <p className="text-xs text-gray-400">
-                              {item.price.toLocaleString()}원
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <button
-                            onClick={() => removeFromCart(item.id)}
-                            className="w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center"
-                          >
-                            <Minus className="w-3 h-3" />
-                          </button>
-                          {/* 이미 담긴 메뉴를 또 담으면 새 줄이 생기지 않으므로,
-                              수량 숫자를 리마운트시켜 변경을 알린다. */}
-                          <span
-                            key={item.quantity}
-                            className="w-4 text-center text-sm animate-qty-bump"
-                          >
-                            {item.quantity}
-                          </span>
-                          <button
-                            onClick={() =>
-                              addToCart(menus.find((m) => m.id === item.id)!)
-                            }
-                            className="w-6 h-6 rounded-full bg-orange-500 hover:bg-orange-600 flex items-center justify-center"
-                          >
-                            <Plus className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-                <div className="px-6 py-5 border-t border-white/10">
-                  <div className="flex justify-between items-center mb-4">
-                    <span className="text-gray-400 text-sm">
-                      총 {totalItems}개
-                    </span>
-                    <span className="text-white font-bold text-lg">
-                      {totalAmount.toLocaleString()}원
-                    </span>
-                  </div>
-                  <button
-                    disabled={cart.length === 0 || orderMutation.isPending}
-                    onClick={() => orderMutation.mutate()}
-                    className="w-full py-3 bg-orange-500 hover:bg-orange-600 disabled:bg-white/10 disabled:text-gray-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
-                  >
-                    {orderMutation.isPending ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" /> 주문 중...
-                      </>
-                    ) : (
-                      <>
-                        <ShoppingCart className="w-5 h-5" /> 주문하기
-                      </>
-                    )}
-                  </button>
-                </div>
-              </>
-            )}
-
-            {/* 영수증 뷰 */}
-            {cartView === "receipt" && (
-              <div className="flex-1 overflow-y-auto py-5 px-3 [&::-webkit-scrollbar]:hidden">
-                {tableOrders.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-gray-600">
-                    <Receipt className="w-10 h-10 mb-2 opacity-30" />
-                    <p className="text-xs">아직 주문 내역이 없습니다</p>
-                  </div>
-                ) : (
-                  <div className="bg-[#111827] rounded-xl border border-white/10 overflow-hidden">
-                    <div className="text-center px-4 pt-5 pb-4 border-b border-dashed border-white/20">
-                      <p className="text-gray-500 text-[10px] tracking-[0.3em] mb-2">
-                        영 수 증
-                      </p>
-                      <p className="text-white text-lg font-bold">
-                        테이블 {tableNumber}번
-                      </p>
-                      {receiptTime && (
-                        <p className="text-gray-500 text-[10px] mt-1">
-                          {receiptTime}
-                        </p>
-                      )}
-                    </div>
-                    <div className="px-4 py-3 border-b border-dashed border-white/20 space-y-2">
-                      <div className="flex justify-between text-[10px] text-gray-600 pb-2 border-b border-white/10">
-                        <span>메뉴</span>
-                        <span>금액</span>
-                      </div>
-                      {receiptItems.map((item, i) => (
-                        <div
-                          key={i}
-                          className="flex justify-between items-baseline text-xs"
-                        >
-                          <div className="flex items-baseline gap-1 min-w-0 mr-2">
-                            <span className="text-white truncate">
-                              {item.name}
-                            </span>
-                            <span className="text-gray-500 shrink-0">
-                              ×{item.quantity}
-                            </span>
-                          </div>
-                          <span className="text-orange-400 tabular-nums shrink-0">
-                            {(item.price * item.quantity).toLocaleString()}원
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="px-4 py-4 flex justify-between items-center">
-                      <span className="text-white font-bold text-xs tracking-widest">
-                        합 계
-                      </span>
-                      <span className="text-orange-400 text-base font-bold tabular-nums">
-                        {grandTotal.toLocaleString()}원
-                      </span>
-                    </div>
-                    <div className="text-center py-3 border-t border-dashed border-white/20">
-                      <p className="text-gray-600 text-[10px] tracking-[0.2em]">
-                        감사합니다
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+          {/* 장바구니 / 주문 내역 패널 (md 이상 전용. md 미만은 하단 바 + 시트) */}
+          <aside className="hidden md:flex md:w-1/4 shrink-0 bg-[#1f2937] md:border-l border-white/10 flex-col">
+            <CartPanel
+              cartView={cartView}
+              onChangeView={setCartView}
+              cartTabRef={cartTabRef}
+              cart={cart}
+              totalItems={totalItems}
+              totalAmount={totalAmount}
+              badgePulseKey={landed}
+              onIncrease={increaseCartItem}
+              onDecrease={removeFromCart}
+              onSubmit={() => orderMutation.mutate()}
+              isSubmitting={orderMutation.isPending}
+              orderCount={tableOrders.length}
+              receiptItems={receiptItems}
+              grandTotal={grandTotal}
+              tableNumber={tableNumber}
+              receiptTime={receiptTime}
+            />
           </aside>
         </div>
+      )}
+
+      {/* md 미만 장바구니 표면. 루트의 직계 자식이라야 한다 —
+          하단 바가 루트 flex-col의 마지막 행이 되어 메뉴 영역을 밀지 않고,
+          시트의 fixed가 transform 조상 없이 뷰포트 기준으로 잡힌다.
+          md 이상에서는 통째로 display:none이라 820은 이 블록의 영향을 받지 않는다. */}
+      {activeTab === "menu" && (
+        <CartSheet
+          open={isCartOpen}
+          // 하단 바는 "총 N개 · 금액"을 보여주는 장바구니 어포던스인데 마지막에 보던
+          // 뷰가 유지되면 주문 1회차 뒤 재담기에서 영수증이 뜬다. 완료 모달의
+          // "주문 내역"은 cartView를 직접 receipt로 바꾸므로 그 경로는 영향받지 않는다.
+          onOpen={() => {
+            setCartView("cart");
+            setIsCartOpen(true);
+          }}
+          onClose={() => setIsCartOpen(false)}
+          barRef={cartBarRef}
+          cartView={cartView}
+          onChangeView={setCartView}
+          cart={cart}
+          totalItems={totalItems}
+          totalAmount={totalAmount}
+          badgePulseKey={landed}
+          onIncrease={increaseCartItem}
+          onDecrease={removeFromCart}
+          onSubmit={() => orderMutation.mutate()}
+          isSubmitting={orderMutation.isPending}
+          orderCount={tableOrders.length}
+          receiptItems={receiptItems}
+          grandTotal={grandTotal}
+          tableNumber={tableNumber}
+          receiptTime={receiptTime}
+        />
       )}
 
       {/* 직원 호출 탭 */}
@@ -693,6 +596,9 @@ export default function Page() {
                 onClick={() => {
                   setShowOrderModal(false);
                   setCartView("receipt");
+                  // md 미만에서는 영수증이 시트 안에 있다. 뷰만 바꾸면
+                  // 아무 반응 없는 버튼이 된다. md 이상에서는 무시되는 state다.
+                  setIsCartOpen(true);
                 }}
                 className="px-6 py-2 bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 rounded-xl text-sm transition-colors flex items-center gap-1.5"
               >
