@@ -281,6 +281,9 @@ export default function Page() {
   // block: "nearest"가 없으면 세로 축까지 정렬하려 들어 페이지가 튄다.
   // setState가 아닌 DOM 부수효과라 set-state-in-effect 룰 대상이 아니다.
   useEffect(() => {
+    // md 이상은 세로 레일이라 원본에 없던 동작이 된다. block: "nearest"가 세로 축에
+    // 걸려 카테고리가 많은 매장에서는 스크롤할 때마다 좌측 레일이 스스로 움직인다.
+    if (window.matchMedia("(min-width: 768px)").matches) return;
     chipRefs.current[activeCategory]?.scrollIntoView({
       behavior: "smooth",
       inline: "center",

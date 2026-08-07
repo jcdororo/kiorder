@@ -74,12 +74,16 @@ export function CartPanel({
 }: CartPanelProps) {
   return (
     <>
-      {/* 토글 태그 */}
+      {/* 토글 태그.
+          nowrap을 max-md로 한정한 이유: 시트는 전폭이라 접힘이 없어야 하지만,
+          md 이상 우측 열은 w-1/4(820에서 205px)이고 두 탭이 nowrap이면 233px를
+          요구해 `주문 내역`이 화면 밖으로 45px 잘린다. 원본이 2줄로 접혀 있었기에
+          맞았던 폭 예산이다. */}
       <div className="shrink-0 px-4 py-3 border-b border-white/10 flex gap-2">
         <button
           ref={cartTabRef}
           onClick={() => onChangeView("cart")}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium max-md:whitespace-nowrap transition-colors ${
             cartView === "cart"
               ? "bg-orange-500 text-white"
               : "bg-white/5 text-gray-400 hover:text-white"
@@ -100,7 +104,7 @@ export function CartPanel({
         </button>
         <button
           onClick={() => onChangeView("receipt")}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium max-md:whitespace-nowrap transition-colors ${
             cartView === "receipt"
               ? "bg-orange-500 text-white"
               : "bg-white/5 text-gray-400 hover:text-white"
