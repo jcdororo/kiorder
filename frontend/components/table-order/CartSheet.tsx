@@ -275,8 +275,13 @@ type CartSheetProps = CartPanelProps & {
   open: boolean;
   onOpen: () => void;
   onClose: () => void;
-  /** fly-to-cart 도착점(모바일). 하단 바가 md 미만에서 유일하게 보이는 장바구니 표면이다. */
-  barRef?: Ref<HTMLButtonElement>;
+  /**
+   * fly-to-cart 도착점(모바일). 하단 바가 md 미만에서 유일하게 보이는 장바구니 표면이다.
+   * 버튼 전체가 아니라 아이콘 + `총 N개`만 감싸는 요소에 붙인다 — 버튼(폭 250px) 중심은
+   * 개수와 금액 사이의 빈 공간이라, 썸네일이 아무것도 없는 곳에 떨어지고 펌프는
+   * 60~100px 왼쪽에서 터진다. 데스크톱에서 성립하던 "도착 → 펌프"의 인과가 끊긴다.
+   */
+  barRef?: Ref<HTMLSpanElement>;
 };
 
 /**
@@ -308,17 +313,21 @@ export default function CartSheet({
       */}
       <div className="md:hidden shrink-0 flex items-center gap-3 px-4 py-3 bg-[#1f2937] border-t border-white/10">
         <button
-          ref={barRef}
           onClick={onOpen}
           aria-expanded={open}
           className="flex-1 min-w-0 flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 active:bg-white/10 transition-colors"
         >
-          <ShoppingCart className="w-4 h-4 text-orange-400 shrink-0" />
-          <span
-            key={panel.badgePulseKey}
-            className="animate-in zoom-in-50 duration-200 text-sm text-gray-300 shrink-0"
-          >
-            총 {panel.totalItems}개
+          {/* 비행 도착점. 배지 펌프가 터지는 `총 N개`를 포함하는 최소 단위라야
+              도착과 펌프가 같은 자리에서 일어난다. 담은 게 없어도 항상 렌더된다 —
+              첫 담기 시점에 목표가 없으면 썸네일이 (0,0)으로 날아간다. */}
+          <span ref={barRef} className="flex items-center gap-2 shrink-0">
+            <ShoppingCart className="w-4 h-4 text-orange-400 shrink-0" />
+            <span
+              key={panel.badgePulseKey}
+              className="animate-in zoom-in-50 duration-200 text-sm text-gray-300 shrink-0"
+            >
+              총 {panel.totalItems}개
+            </span>
           </span>
           <span className="ml-auto text-white font-bold tabular-nums truncate">
             {panel.totalAmount.toLocaleString()}원

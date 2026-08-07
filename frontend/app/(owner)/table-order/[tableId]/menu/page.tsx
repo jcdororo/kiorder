@@ -42,7 +42,9 @@ export default function Page() {
   // 비행 도착점. 배지는 totalItems > 0일 때만 렌더되어 첫 담기 시점에 존재하지 않으므로,
   // 항상 존재하는 장바구니 탭 버튼(데스크톱) / 하단 바(모바일)를 목표로 삼는다.
   const cartTabRef = useRef<HTMLButtonElement>(null);
-  const cartBarRef = useRef<HTMLButtonElement>(null);
+  // 모바일 목표는 하단 바 버튼 전체가 아니라 아이콘 + `총 N개`를 감싼 span이다.
+  // 버튼 중심(폭 250px)은 개수와 금액 사이의 빈 공간이라 착지 지점과 펌프가 어긋난다.
+  const cartBarRef = useRef<HTMLSpanElement>(null);
   const { flights, fly, done } = useFlyToCart();
   // 배지 펌프를 담기 시점이 아니라 "비행체가 도착한 시점"에 터뜨리기 위한 카운터.
   // totalItems를 key로 쓰면 비행체가 아직 출발 카드 위에 있을 때 이미 펌프가 끝나
