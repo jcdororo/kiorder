@@ -174,10 +174,9 @@ export default function Page() {
   };
 
   // 메뉴 카드에서만 호출한다. 장바구니 안의 + 버튼은 이미 목적지에 있으므로 날릴 필요가 없다.
-  const addFromCard = (
-    e: React.MouseEvent<HTMLButtonElement>,
-    menu: MenuItem,
-  ) => {
+  // 호출부가 카드 전체(button)라 HTMLElement로 받는다. closest가 자기 자신도
+  // 매치하므로 카드가 currentTarget이어도 썸네일 좌표는 그대로 찾는다.
+  const addFromCard = (e: React.MouseEvent<HTMLElement>, menu: MenuItem) => {
     addToCart(menu); // 상태는 즉시 반영한다. 애니메이션은 순수 장식이라 조작을 지연시키지 않는다.
     const thumb = e.currentTarget
       .closest("[data-menu-card]")
@@ -378,10 +377,17 @@ export default function Page() {
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {items.map((menu) => (
-                    <div
+                    // 담기 버튼만으로는 히트 영역이 작아 카드 전체를 누를 수 있게 한다.
+                    // div + onClick이 아니라 button인 이유: 키보드 도달·스크린리더
+                    // 역할·누른 상태가 전부 따라온다. 대신 안쪽 담기는 span이어야 한다
+                    // (버튼 안 버튼은 HTML에서 금지).
+                    <button
                       key={menu.id}
+                      type="button"
                       data-menu-card
-                      className="bg-[#1f2937] rounded-xl overflow-hidden border border-white/10 hover:border-orange-500/50 transition-all"
+                      onClick={(e) => addFromCard(e, menu)}
+                      aria-label={`${menu.name} ${menu.price.toLocaleString()}원 담기`}
+                      className="group block w-full text-left bg-[#1f2937] rounded-xl overflow-hidden border border-white/10 hover:border-orange-500/50 active:scale-[0.98] transition-all duration-150"
                     >
                       <div
                         data-menu-thumb
@@ -407,14 +413,14 @@ export default function Page() {
                         <p className="text-orange-400 text-sm mt-1">
                           {menu.price.toLocaleString()}원
                         </p>
-                        <button
-                          onClick={(e) => addFromCard(e, menu)}
-                          className="mt-2 w-full py-1.5 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white rounded-lg text-sm flex items-center justify-center gap-1 transition-all duration-150"
-                        >
+                        {/* 카드가 버튼이 됐으므로 이건 더 이상 버튼이 아니다.
+                            어포던스는 남기되 hover는 카드 전체에 반응해야 하므로
+                            group-hover를 쓴다(전에는 이 요소 위에서만 색이 바뀌었다). */}
+                        <span className="mt-2 w-full py-1.5 bg-orange-500 group-hover:bg-orange-600 text-white rounded-lg text-sm flex items-center justify-center gap-1 transition-colors duration-150">
                           <Plus className="w-3.5 h-3.5" /> 담기
-                        </button>
+                        </span>
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
               </section>
