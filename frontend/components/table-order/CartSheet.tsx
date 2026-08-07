@@ -210,8 +210,10 @@ export function CartPanel({
       {/* 영수증 뷰 */}
       {cartView === "receipt" && (
         <div className="flex-1 overflow-y-auto py-5 px-3 [&::-webkit-scrollbar]:hidden">
+          {/* 빈 상태 색이 gray-600(#4b5563)이면 이 패널 배경(#1f2937) 위에서 거의
+              안 읽힌다. 데스크톱에선 우측 열 구석이지만 시트에선 화면 한복판이다. */}
           {orderCount === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-gray-600">
+            <div className="flex flex-col items-center justify-center h-full text-gray-500">
               <Receipt className="w-10 h-10 mb-2 opacity-30" />
               <p className="text-xs">아직 주문 내역이 없습니다</p>
             </div>
@@ -334,17 +336,26 @@ export default function CartSheet({
           </span>
           <ChevronUp className="w-4 h-4 text-gray-500 shrink-0" />
         </button>
-        <button
-          onClick={panel.onSubmit}
-          disabled={panel.cart.length === 0 || panel.isSubmitting}
-          className="shrink-0 min-w-[92px] px-5 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 disabled:bg-white/10 disabled:text-gray-600 text-white text-sm font-semibold flex items-center justify-center transition-colors"
-        >
-          {panel.isSubmitting ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            "주문하기"
-          )}
-        </button>
+        {/* 담긴 게 없을 때는 "눌러도 안 되는 회색 버튼"이 첫 화면부터 상주하는 대신
+            무엇을 해야 하는지 알려준다. 바의 폭·높이는 버튼과 동일하게 유지해야 한다
+            — 이 바가 fly-to-cart 도착점이라 치수가 흔들리면 착지 지점이 움직인다. */}
+        {panel.cart.length === 0 ? (
+          <span className="shrink-0 min-w-[92px] px-5 py-3 text-sm text-gray-500 flex items-center justify-center">
+            메뉴를 담아주세요
+          </span>
+        ) : (
+          <button
+            onClick={panel.onSubmit}
+            disabled={panel.isSubmitting}
+            className="shrink-0 min-w-[92px] px-5 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 disabled:bg-orange-500/60 text-white text-sm font-semibold flex items-center justify-center transition-colors"
+          >
+            {panel.isSubmitting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              "주문하기"
+            )}
+          </button>
+        )}
       </div>
 
       {open && (
@@ -364,8 +375,9 @@ export default function CartSheet({
             aria-label="장바구니"
             className="relative h-[70%] flex flex-col bg-[#1f2937] border-t border-white/10 rounded-t-2xl overflow-hidden animate-in slide-in-from-bottom duration-300"
           >
+            {/* 그래버 막대를 두지 않는다. 끌어 닫기를 암시해놓고 스와이프 구현이
+                없으면 지키지 못할 약속이 된다. 닫는 경로는 X와 스크림 두 개다. */}
             <div className="relative shrink-0 pt-3 pb-1">
-              <span className="mx-auto block h-1 w-10 rounded-full bg-white/20" />
               <button
                 type="button"
                 onClick={onClose}
