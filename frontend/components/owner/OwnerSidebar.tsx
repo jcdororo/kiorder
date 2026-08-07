@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { PhoneCall, UtensilsCrossed, Home } from "lucide-react";
+import { BackToTour } from "@/components/shared/BackToTour";
+import { PhoneCall, UtensilsCrossed } from "lucide-react";
 
 interface OwnerSidebarProps {
   active: "menu" | "waiting";
@@ -34,15 +34,7 @@ export function OwnerSidebar({ active }: OwnerSidebarProps) {
           >
             {mobileLinkLabel}
           </Button>
-          <Link href="/#screens">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-gray-500 hover:text-white hover:bg-white/10"
-            >
-              홈
-            </Button>
-          </Link>
+          <BackToTour className="px-3 py-1.5 rounded-md hover:bg-white/10" />
         </div>
       </div>
 
@@ -80,15 +72,13 @@ export function OwnerSidebar({ active }: OwnerSidebarProps) {
           </Button>
         </nav>
 
-        <Link href="/#screens">
-          <Button
-            variant="ghost"
-            className="w-full justify-center lg:justify-start text-gray-500 hover:text-white hover:bg-white/10 px-2 lg:px-4"
-          >
-            <Home className="w-4 h-4 shrink-0 lg:mr-2" />
-            <span className="hidden lg:inline">홈으로</span>
-          </Button>
-        </Link>
+        {/* 나머지 7개 화면과 같은 컴포넌트를 쓴다. 손으로 짠 링크를 두면
+            아이콘과 라벨이 화면마다 갈라져 "홈으로"인지 "뒤로가기"인지 헷갈린다.
+            md의 아이콘 레일(w-14)에서는 라벨이 sr-only가 되어야 하므로 responsive. */}
+        <BackToTour
+          variant="responsive"
+          className="w-full justify-center lg:justify-start px-2 lg:px-4 py-2 rounded-md hover:bg-white/10"
+        />
       </div>
     </>
   );
