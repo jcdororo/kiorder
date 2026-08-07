@@ -297,8 +297,12 @@ export default function Page() {
   );
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
+  // h-screen(=100vh)은 iOS Safari에서 툴바가 접힌 상태 기준이라 실제 가시 영역보다
+  // 60~115px 크다. 하단 바가 루트 flex-col의 마지막 행이고 루트가 overflow-hidden이라,
+  // 벗어나면 스크롤로 드러낼 수도 없다 — md 미만에서 장바구니에 도달하는 유일한 경로와
+  // 주문하기가 동시에 사라진다. dvh는 툴바가 펼쳐진 현재 높이를 쓴다.
   return (
-    <div className="h-screen flex flex-col bg-[#111827] text-white overflow-hidden">
+    <div className="h-dvh flex flex-col bg-[#111827] text-white overflow-hidden">
       {/* 헤더 */}
       <div className="shrink-0 px-6 py-4 bg-[#1f2937] border-b border-white/10">
         <h2 className="text-white m-0 text-lg font-semibold">테이블 주문</h2>
@@ -318,7 +322,13 @@ export default function Page() {
           메뉴 주문
         </button>
         <button
-          onClick={() => setActiveTab("service")}
+          // 시트가 열린 채 탭이 바뀌면 CartSheet는 언마운트되지만 isCartOpen은 true로
+          // 남아, 메뉴 탭으로 돌아왔을 때 시트가 열린 채 다시 뜬다. 스크림은 포인터만
+          // 막고 이 버튼은 여전히 포커스 가능해서 키보드로 실제 도달하는 경로다.
+          onClick={() => {
+            setActiveTab("service");
+            setIsCartOpen(false);
+          }}
           className={`flex-1 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
             activeTab === "service"
               ? "text-orange-400 border-b-2 border-orange-400"
@@ -440,7 +450,13 @@ export default function Page() {
       {activeTab === "menu" && (
         <CartSheet
           open={isCartOpen}
-          onOpen={() => setIsCartOpen(true)}
+          // 하단 바는 "총 N개 · 금액"을 보여주는 장바구니 어포던스인데 마지막에 보던
+          // 뷰가 유지되면 주문 1회차 뒤 재담기에서 영수증이 뜬다. 완료 모달의
+          // "주문 내역"은 cartView를 직접 receipt로 바꾸므로 그 경로는 영향받지 않는다.
+          onOpen={() => {
+            setCartView("cart");
+            setIsCartOpen(true);
+          }}
           onClose={() => setIsCartOpen(false)}
           barRef={cartBarRef}
           cartView={cartView}
