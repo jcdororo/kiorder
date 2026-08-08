@@ -28,7 +28,8 @@ export class OrderService {
 
     const menuItemIds = [...mergedItems.keys()];
     const menuItems = await this.prisma.menuItem.findMany({
-      where: { id: { in: menuItemIds } },
+      // 삭제된 메뉴는 목록에 없지만, 삭제 전에 화면을 열어둔 단말이 그대로 담아 보낼 수 있다.
+      where: { id: { in: menuItemIds }, deletedAt: null },
       select: {
         id: true,
         type: true,

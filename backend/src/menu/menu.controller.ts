@@ -33,12 +33,19 @@ export class MenuController {
   }
 
   @Patch(':id')
-  updateMenu(@Param('id') id: string, @Body() dto: UpdateMenuDto) {
-    return this.menuService.updateMenu(id, dto);
+  updateMenu(
+    @Request() req: { user: { userId: string } },
+    @Param('id') id: string,
+    @Body() dto: UpdateMenuDto,
+  ) {
+    return this.menuService.updateMenu(req.user.userId, id, dto);
   }
 
   @Delete(':id')
-  deleteMenu(@Param('id') id: string) {
-    return this.menuService.deleteMenu(id);
+  deleteMenu(
+    @Request() req: { user: { userId: string } },
+    @Param('id') id: string,
+  ) {
+    return this.menuService.deleteMenu(req.user.userId, id);
   }
 }
